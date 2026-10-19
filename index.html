@@ -671,13 +671,11 @@ html.swp,html.swp body{overflow-x:hidden}
 <div class="card clk" id="clk"></div>
 
 <div class="card" id="withme" style="display:none"></div>
+<div class="card" id="payday"></div>
 <div class="card" id="visa">
-  <h2>Visa hours check <span style="font-weight:400;color:var(--mu);font-size:13px">Stamp 1G · 40 hours a week</span></h2>
-  <div class="vbar"><i id="vfill"></i></div>
+  <h2>Hours this week</h2>
   <div class="vst"><div><b id="vhc">0h 00m</b><small>Holy Cross (tracked)</small></div><div><b id="var">0h 00m</b><small>Arches (estimate)</small></div><div><b id="vtot">0h 00m</b><small>Total this week</small></div></div>
-  <div class="vok" id="vmsg"></div>
-  <label for="varch">Hours for each Arches shift (estimate)</label><input id="varch" type="number" inputmode="decimal" min="0" max="16" step="0.5">
-  <p class="mnote" style="margin:8px 0 0">Stamp 1G lets you work up to 40 hours a week for any employer, so all your jobs count together. The 20-hour term-time limit is for Stamp 2 students, not for you. This is a helper only. Check the official rules if you are unsure.</p>
+  <label for="varch">Hours for each Arches shift (estimate). 2:30pm to 12am = 9.5 hours</label><input id="varch" type="number" inputmode="decimal" min="0" max="16" step="0.5">
 </div>
 <div class="card" id="bionudge" hidden>
   <h2>Turn on fingerprint login</h2>
@@ -830,6 +828,7 @@ html.swp,html.swp body{overflow-x:hidden}
     <input id="bkq" type="search" placeholder="Search name, table or note" autocomplete="off" aria-label="Search bookings">
     <div class="chips2" id="bkf"></div>
     <div id="bklist"></div>
+    <button class="add ghost" id="bkpdf">Print this week (PDF)</button>
   </div>
   <div class="card" id="dncard">
     <h2>Notes for this day</h2>
@@ -887,6 +886,25 @@ html.swp,html.swp body{overflow-x:hidden}
   <div class="err" style="color:var(--mu);text-align:left;margin:0 0 8px;min-height:0;font-size:13px">One page for the week shown at the top: hours, daily hours chart, gross pay, tax taken off (PAYE, USC, PRSI, My Future Fund), take-home pay and your shifts. Use the arrows at the top to pick any week.</div>
   <button class="add" id="pdfb" style="margin-top:0">Download PDF for this week</button>
   <div class="err" id="pdfmsg" style="color:var(--mu);text-align:left;min-height:0"></div>
+</div>
+
+<div class="card" id="shcard">
+  <h2>Print an A4 sheet (PDF)</h2>
+  <div class="err" style="color:var(--mu);text-align:left;margin:0 0 8px;min-height:0;font-size:13px">Pick a sheet. The app makes a PDF for A4 paper. Open it and print it.</div>
+  <label for="shsel">Which sheet?</label>
+  <select id="shsel">
+    <option value="roster">Roster (week shown at top of Hours)</option>
+    <option value="book">Bookings and day notes (week of the day you picked)</option>
+    <option value="hours">My hours (week shown at top of Hours)</option>
+    <option value="walks">My walks (week shown at top of Hours)</option>
+    <option value="free">Any sheet: I type my own</option>
+  </select>
+  <div id="shfree" hidden>
+    <label for="shtit">Title</label><input id="shtit" type="text" maxlength="60" placeholder="Specials, Rota, Shopping list...">
+    <label for="shtxt">Your text (one line = one row)</label><textarea class="tb" id="shtxt" style="min-height:140px"></textarea>
+  </div>
+  <button class="add" id="shgo">Download PDF</button>
+  <div class="err" id="shmsg" style="color:var(--mu);text-align:left;min-height:0"></div>
 </div>
 
 <div class="card">
@@ -1340,7 +1358,7 @@ function renderRoster(){
       rs.forEach(function(r){
         var on=(r.st==="ON"&&!r.en);
         var wi=on?"":withLine(r,di);
-        h+='<div class="'+cls+'"><div>'+lab+'</div><div>'+(on?'<span class="onp">Arches 11:30 – Close</span>':'<b>'+fmtEntry(r)+'</b>')+' <button class="del" data-rid="'+r.id+'">Delete</button></div>'+(wi?'<div class="wi">'+wi+'</div>':'')+'</div>';
+        h+='<div class="'+cls+'"><div>'+lab+'</div><div>'+(on?'<span class="onp">Arches 14:30 – 12am</span>':'<b>'+fmtEntry(r)+'</b>')+' <button class="del" data-rid="'+r.id+'">Delete</button></div>'+(wi?'<div class="wi">'+wi+'</div>':'')+'</div>';
       });
     }else{h+='<div class="'+cls+'"><div>'+lab+'</div><span class="o">Off</span></div>'}
   }
@@ -1467,7 +1485,7 @@ renderBook();
 /* ---- v38: advanced Roster and Bookings ---- */
 var DNS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 var RS={tab:"week",day:iso(new Date()),month:new Date(new Date().getFullYear(),new Date().getMonth(),1)};
-function rMins(r){var on=(r.st==="ON"&&!r.en),a=on?690:toMin(r.st),b=on?1440:toMin(r.en);if(b<a)b=Math.min(1440,b+1440);return{a:a,b:b,on:on}}
+function rMins(r){var on=(r.st==="ON"&&!r.en),a=on?870:toMin(r.st),b=on?1440:toMin(r.en);if(b<a)b=Math.min(1440,b+1440);return{a:a,b:b,on:on}}
 function hm(m){m=Math.round(m);return m>=1440?"Close":pad(Math.floor(m/60))+":"+pad(m%60)}
 function dur(m){var h=Math.floor(m/60),mm=Math.round(m%60);return h+"h"+(mm?" "+pad(mm)+"m":"")}
 function rDay(di){return roster.filter(function(r){return r.date===di}).sort(function(x,y){return rMins(x).a-rMins(y).a})}
@@ -1624,7 +1642,7 @@ function wDist(a,b){
 function wElapsed(){return W.ms+((W.on&&!W.paused)?Date.now()-W.seg:0)}
 function wClock(ms){var s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+":"+pad(m):m)+":"+pad(x)}
 function wKm(m){return (m/1000).toFixed(2)}
-function wPersist(){try{localStorage.setItem(WA,JSON.stringify({t0:W.t0,m:W.m,ms:wElapsed()}))}catch(e){}}
+function wPersist(){try{localStorage.setItem(WA,JSON.stringify({act:W.on?1:0,paused:W.paused?1:0,t0:W.t0,m:W.m,ms:wElapsed(),lp:W.lastPt,sv:Date.now()}))}catch(e){}}
 function wLive(){
   $("wkm").textContent=wKm(W.m);
   $("wsteps").textContent=wSteps(W.m).toLocaleString();
@@ -1641,8 +1659,9 @@ function wOnPos(p){
   var c=p.coords,pt={lat:c.latitude,lng:c.longitude,t:p.timestamp};
   if(c.accuracy>30){W.gps="Weak GPS signal. Walk in the open.";wLive();return}
   W.gps="GPS is good";
-  if(!W.lastPt){W.lastPt=pt;wLive();return}
+  if(!W.lastPt){W.lastPt=pt;wPersist();wLive();return}
   var d=wDist(W.lastPt,pt),dt=Math.max(0.5,(pt.t-W.lastPt.t)/1000);
+  if(W.gap){W.gap=false;if(d/dt<=3&&d>=4){W.m+=d}W.lastPt=pt;wPersist();wLive();return}
   if(d<4){wLive();return}
   if(d/dt>10){W.lastPt=pt;wLive();return}
   W.m+=d;W.lastPt=pt;wPersist();wLive();
@@ -1656,7 +1675,7 @@ function wStart(){
   if(!navigator.geolocation){toast("This phone cannot give location");return}
   W.on=true;W.paused=false;W.m=0;W.ms=0;W.seg=Date.now();W.t0=Date.now();W.lastPt=null;W.gps="Looking for GPS...";
   W.wid=navigator.geolocation.watchPosition(wOnPos,wErr,{enableHighAccuracy:true,maximumAge:0,timeout:30000});
-  W.tick=setInterval(wLive,1000);wLock();wButtons();wLive();
+  W.tick=setInterval(wLive,1000);wLock();wButtons();wLive();wPersist();
 }
 function wPause(){
   if(W.paused){W.paused=false;W.seg=Date.now();W.lastPt=null;W.gps="Looking for GPS...";wLock()}
@@ -1668,7 +1687,7 @@ function wStop(){
   if(W.wid!=null)navigator.geolocation.clearWatch(W.wid);
   clearInterval(W.tick);try{if(W.wl)W.wl.release()}catch(e){}
   var m=W.m,t0=W.t0;
-  W.on=false;W.paused=false;W.wid=null;W.wl=null;
+  W.on=false;W.paused=false;W.wid=null;W.wl=null;W.gap=false;
   try{localStorage.removeItem(WA)}catch(e){}
   if(m>=20)wAdd(t0,ms,m);else toast("Too short, not saved");
   W.m=0;W.ms=0;wButtons();wLive();wRender();
@@ -1698,11 +1717,26 @@ function wRender(){
 function wRecover(){
   var a=null;try{a=JSON.parse(localStorage.getItem(WA)||"null")}catch(e){}
   var el=$("wrec");
+  if(a&&a.act&&!W.on&&a.t0&&Date.now()-(a.sv||0)<12*3600000&&navigator.geolocation){
+    W.on=true;W.paused=!!a.paused;W.m=a.m||0;W.t0=a.t0;W.lastPt=a.lp||null;W.gap=!!a.lp&&!a.paused;
+    W.ms=a.ms||0;W.seg=Date.now();
+    if(!a.paused&&a.sv)W.ms+=Math.max(0,Date.now()-a.sv);
+    W.gps="Walk continued. Looking for GPS...";
+    W.wid=navigator.geolocation.watchPosition(wOnPos,wErr,{enableHighAccuracy:true,maximumAge:0,timeout:30000});
+    W.tick=setInterval(wLive,1000);wLock();wButtons();wLive();
+    el.hidden=false;
+    el.innerHTML='<h2>Your walk is still going</h2><p class="mnote">The app was closed, but your walk was not stopped. The time kept counting. Distance is added from your last point to where you are now. Tap Stop when you finish.</p>';
+    return;
+  }
   if(a&&a.m>=20&&!W.on){
     el.hidden=false;
     el.innerHTML='<h2>Unsaved walk found</h2><p class="mnote">'+wKm(a.m)+' km. The app closed before you tapped Stop.</p><div class="btns"><button class="add" data-w="rsave">Save it</button><button class="add ghost" data-w="rdrop">Throw away</button></div>';
   }else{el.hidden=true;try{if(a&&!W.on)localStorage.removeItem(WA)}catch(e){}}
 }
+setInterval(function(){if(W.on&&!W.paused)wPersist()},5000);
+document.addEventListener("visibilitychange",function(){if(W.on)wPersist()});
+window.addEventListener("pagehide",function(){if(W.on)wPersist()});
+try{$("wbtn").insertAdjacentHTML("afterend",'<p class="mnote" style="margin:8px 0 0">After you tap Start, you can close the app. Your walk stays on. When you open the app again, it continues. <b>Important: a phone only gives GPS to an app that is open on the screen.</b> So while the app is closed, the app cannot see each step. It adds the straight distance from your last point to where you are now. For the best result, keep the app open and the screen on.</p>')}catch(e){}
 $("v-walk").addEventListener("click",function(e){
   var b=e.target.closest("[data-w]");if(!b)return;
   var a=b.getAttribute("data-w");
@@ -1723,7 +1757,7 @@ $("v-walk").addEventListener("click",function(e){
 $("wstr").value=stride;$("wgoal").value=wgoal;
 $("wstr").oninput=function(){var v=parseFloat(this.value);if(v>=30&&v<=150){stride=v;try{localStorage.setItem(WS,String(v))}catch(e){}wLive();wRender()}};
 $("wgoal").oninput=function(){var v=parseInt(this.value,10);if(v>=1000){wgoal=v;try{localStorage.setItem(WG,String(v))}catch(e){}wRender()}};
-document.addEventListener("visibilitychange",function(){if(!document.hidden)wLock()});
+document.addEventListener("visibilitychange",function(){if(!document.hidden){wLock();if(W.on&&!W.paused&&W.wid==null){}}});
 wButtons();wLive();wRender();wRecover();
 clkKey=null;renderClock();
 
@@ -2198,7 +2232,7 @@ $("v-goals").addEventListener("click",function(e){
 setInterval(gBadge,60000);gBadge();
 
 /* ---- v42: visa hours check (Stamp 1G, 40 h) ---- */
-var VK="hc_arches_h_v1",archH=8;
+var VK="hc_arches_h_v1",archH=9.5;
 try{var av=parseFloat(localStorage.getItem(VK));if(av>=0)archH=av}catch(e){}
 $("varch").value=archH;
 window.vRender=function(){
@@ -2206,13 +2240,8 @@ window.vRender=function(){
   var a=iso(wkStart),b=iso(end),hc=0,ac=0;
   shifts.forEach(function(s){if(s.date>=a&&s.date<=b)hc+=mins(s)});
   roster.forEach(function(r){if(r.date>=a&&r.date<=b&&r.st==="ON"&&!r.en)ac+=archH*60});
-  var tot=hc+ac,lim=40*60,pct=Math.min(100,Math.round(tot/lim*100));
-  $("vhc").textContent=fmt(hc);$("var").textContent=fmt(ac);$("vtot").textContent=fmt(tot);
-  $("vfill").style.width=pct+"%";$("vfill").style.background=tot>lim?"#b42318":(tot>=lim*0.8?"#d97706":"#1a7f4b");
-  var m=$("vmsg");
-  if(tot>lim){m.className="vbad";m.textContent="Over the 40 hour limit by "+fmt(tot-lim)+". Check your hours and your rota."}
-  else if(tot>=lim*0.8){m.className="vwarn";m.textContent="Close to the limit. You have "+fmt(lim-tot)+" left this week."}
-  else{m.className="vok";m.textContent="You are fine. You have "+fmt(lim-tot)+" left this week."}
+  $("vhc").textContent=fmt(hc);$("var").textContent=fmt(ac);$("vtot").textContent=fmt(hc+ac);
+  if(window.pdRender)pdRender();
 };
 $("varch").oninput=function(){var v=parseFloat(this.value);if(v>=0&&v<=16){archH=v;try{localStorage.setItem(VK,String(v))}catch(e){}vRender()}};
 vRender();
@@ -3273,7 +3302,7 @@ function buildWeekPDF(){
   });
   if(list.length>maxRows){P.text(40,y,"... and "+(list.length-maxRows)+" more shifts",10,false,GR);y+=16}
   if(arch.length){
-    y+=8;P.text(40,y,"Arches Bar (roster, 11:30 – Close): "+arch.map(function(r){return parse(r.date).toLocaleDateString("en-IE",{weekday:"short",day:"numeric",month:"short"})}).join(", "),10,false,GR);y+=16;
+    y+=8;P.text(40,y,"Arches Bar (roster, 14:30 – 12am): "+arch.map(function(r){return parse(r.date).toLocaleDateString("en-IE",{weekday:"short",day:"numeric",month:"short"})}).join(", "),10,false,GR);y+=16;
   }
   P.hline(40,555,790,LG);
   P.text(40,806,"Estimate only: 2026 Irish rates, one job, tax credits "+eur(parseFloat(credits)>=0&&credits!==""?parseFloat(credits):4000)+" a year. Your payslip is the real figure.",8,false,GR);
@@ -3307,6 +3336,150 @@ $("pdfb").onclick=function(){
 
 
 
+
+/* ---- v49: payday, A4 sheets ---- */
+function pdRender(){
+  var el=$("payday");if(!el)return;
+  var t=new Date();t=new Date(t.getFullYear(),t.getMonth(),t.getDate());
+  var pd=new Date(t);pd.setDate(t.getDate()+((3-t.getDay()+7)%7));
+  var ws=new Date(pd);ws.setDate(pd.getDate()-9);var we=new Date(pd);we.setDate(pd.getDate()-3);
+  var a=iso(ws),b=iso(we),g=0;
+  shifts.forEach(function(x){if(x.date>=a&&x.date<=b)g+=mins(x)/60*rateFor(x.date)});
+  var dd=Math.round((pd-t)/86400000),o={day:"numeric",month:"short"};
+  var when=dd===0?"Today":(dd===1?"Tomorrow":"In "+dd+" days");
+  var h='<h2>Pay day <span style="font-weight:400;color:var(--mu);font-size:13px">every Wednesday</span></h2><div style="font-size:22px;font-weight:700">'+pd.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"short"})+'</div><div class="mnote" style="margin:2px 0 8px">'+when+'</div>';
+  if(g>0){var n=calcTax(g,b).net;h+='<div class="mnote" style="margin:0">Pay for '+ws.toLocaleDateString(undefined,o)+' to '+we.toLocaleDateString(undefined,o)+' (Holy Cross hours): about <b>'+eur(n)+'</b> after tax. Before tax: '+eur(g)+'. This is an estimate.</div>'}
+  else h+='<div class="mnote" style="margin:0">No Holy Cross pay found for '+ws.toLocaleDateString(undefined,o)+' to '+we.toLocaleDateString(undefined,o)+'. Add your hourly rate in Pay if the amount is missing.</div>';
+  el.innerHTML=h;
+}
+pdRender();
+function pdfBytes(pages){
+  var objs=[],n=pages.length,kids=[];
+  for(var i=0;i<n;i++)kids.push((5+i*2)+" 0 R");
+  objs.push("<< /Type /Catalog /Pages 2 0 R >>");
+  objs.push("<< /Type /Pages /Kids ["+kids.join(" ")+"] /Count "+n+" >>");
+  objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+  objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+  pages.forEach(function(ops,i){var st=ops.join("\n");
+    objs.push("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents "+(6+i*2)+" 0 R >>");
+    objs.push("<< /Length "+st.length+" >>\nstream\n"+st+"\nendstream")});
+  var out="%PDF-1.4\n",offs=[];
+  objs.forEach(function(b,i){offs.push(out.length);out+=(i+1)+" 0 obj\n"+b+"\nendobj\n"});
+  var xr=out.length;
+  out+="xref\n0 "+(objs.length+1)+"\n0000000000 65535 f \n";
+  offs.forEach(function(o){out+=("0000000000"+o).slice(-10)+" 00000 n \n"});
+  out+="trailer\n<< /Size "+(objs.length+1)+" /Root 1 0 R >>\nstartxref\n"+xr+"\n%%EOF";
+  var u=new Uint8Array(out.length);for(var j=0;j<out.length;j++)u[j]=out.charCodeAt(j)&255;
+  return u;
+}
+function shBuild(d){
+  var BUR=[0.482,0.118,0.18],GR=[0.4,0.4,0.4],LG=[0.85,0.85,0.85],WH=[1,1,1],ZB=[0.96,0.95,0.95];
+  var Ps=[],P,y,sz=d.size||10.5,lh=sz+4;
+  function wrap(t,w,size){
+    var out=[];String(t).split("\n").forEach(function(par){
+      var words=par.split(" "),ln="";
+      words.forEach(function(wd){var tt=ln?ln+" "+wd:wd;if(ln&&P.tw(tt,size)*1.08>w){out.push(ln);ln=wd}else ln=tt});
+      out.push(ln);
+    });return out;
+  }
+  function page(){
+    P=new PDF();Ps.push(P);
+    if(Ps.length===1){P.rect(0,0,595,84,BUR);P.text(40,40,d.title,22,true,WH);P.text(40,62,d.sub||"",12,false,WH);y=112}
+    else{P.text(40,36,d.title,11,true,BUR);P.hline(40,555,44,LG);y=66}
+    if(!d.noHead&&d.cols){d.cols.forEach(function(c){P.text(c.x,y,c.h,sz,true,GR)});y+=6;P.hline(40,555,y,LG);y+=14}
+  }
+  page();
+  var cols=d.cols||[{x:40,w:515}];
+  d.rows.forEach(function(r,ri){
+    var cells=cols.map(function(c,i){return wrap(r[i]==null?"":r[i],c.w,sz)});
+    var n=Math.max.apply(null,cells.map(function(c){return c.length}));
+    var h=n*lh+6;
+    if(y+h>780){page()}
+    if(!d.noHead&&ri%2===0)P.rect(36,y-sz-1,523,h,ZB);
+    cells.forEach(function(ls,i){ls.forEach(function(l,k){P.text(cols[i].x,y+k*lh,l,sz,i===0&&!d.noHead)})});
+    y+=h;
+  });
+  if(!d.rows.length){P.text(40,y,"Nothing to show for this week.",11,false,GR);y+=20}
+  if(d.notes&&d.notes.length){
+    y+=14;if(y>760)page();
+    P.text(40,y,d.notesTitle||"Notes",13,true,BUR);y+=8;P.hline(40,555,y,LG);y+=17;
+    d.notes.forEach(function(nn){
+      wrap(nn,515,10.5).forEach(function(l,k){if(y>785)page();P.text(40,y,l,10.5,k===0&&/^[A-Z][a-z]{2} /.test(nn));y+=14});
+      y+=3;
+    });
+  }
+  var today=new Date().toLocaleDateString("en-IE",{day:"numeric",month:"short",year:"numeric"});
+  Ps.forEach(function(p,i){p.hline(40,555,812,LG);p.text(40,826,"Made with the Holy Cross app on "+today+" · page "+(i+1)+" of "+Ps.length,8,false,GR)});
+  return pdfBytes(Ps.map(function(p){return p.ops}));
+}
+function shDay(d){return d.toLocaleDateString("en-IE",{weekday:"short",day:"numeric",month:"short"})}
+function shData(kind){
+  var ws=(kind==="book")?monday(parse(bookDay)):new Date(wkStart),we=new Date(ws);we.setDate(ws.getDate()+6);
+  var a=iso(ws),b=iso(we),sub=ws.toLocaleDateString("en-IE",{day:"numeric",month:"short"})+" – "+we.toLocaleDateString("en-IE",{day:"numeric",month:"short",year:"numeric"});
+  if(kind==="roster"){
+    var rs=roster.filter(function(r){return r.date>=a&&r.date<=b}).sort(function(x,y){return x.date<y.date?-1:1});
+    return {name:"roster-"+a,title:"Roster",sub:sub,size:12,cols:[{h:"Day",x:40,w:150},{h:"Where",x:200,w:140},{h:"Time",x:350,w:200}],
+      rows:rs.map(function(r){var e=eff(r);return [shDay(parse(r.date)),e.rhs?"Arches Bar":"Holy Cross",e.rhs?"14:30 – 12am":fmtEntry(r)]})};
+  }
+  if(kind==="hours"){
+    var ls=shifts.filter(function(x){return x.date>=a&&x.date<=b}).sort(function(x,y){return (x.date+x.st)<(y.date+y.st)?-1:1}),tot=0;
+    ls.forEach(function(x){tot+=mins(x)});
+    return {name:"hours-"+a,title:"My hours",sub:sub,size:12,cols:[{h:"Day",x:40,w:160},{h:"Start – end",x:210,w:190},{h:"Hours",x:410,w:140}],
+      rows:ls.map(function(x){return [shDay(parse(x.date)),x.st+" – "+x.en,fmt(mins(x))]}),notes:["Total: "+fmt(tot)],notesTitle:"Total"};
+  }
+  if(kind==="walks"){
+    var wl=walks.filter(function(w){return w.date>=a&&w.date<=b}).sort(function(x,y){return (x.date+x.t)<(y.date+y.t)?-1:1}),tk=0;
+    wl.forEach(function(w){tk+=w.m});
+    return {name:"walks-"+a,title:"My walks",sub:sub,size:12,cols:[{h:"Day",x:40,w:150},{h:"Start",x:200,w:70},{h:"Distance",x:280,w:90},{h:"Steps",x:380,w:80},{h:"Time",x:470,w:80}],
+      rows:wl.map(function(w){return [shDay(parse(w.date)),w.t,wKm(w.m)+" km",wSteps(w.m,w.sl).toLocaleString(),fmt(w.ms/60000)]}),notes:["Total: "+wKm(tk)+" km"],notesTitle:"Total"};
+  }
+  if(kind==="book"){
+    var bs=bookings.filter(function(x){return x.date>=a&&x.date<=b}).sort(function(x,y){return (x.date+x.time)<(y.date+y.time)?-1:1});
+    var nt=[];for(var i=0;i<7;i++){var dx=new Date(ws);dx.setDate(ws.getDate()+i);var k=iso(dx);if(dayNotes[k])nt.push(shDay(dx)+":\n"+dayNotes[k])}
+    return {name:"bookings-"+a,title:"Bookings",sub:sub,size:10.5,cols:[{h:"Day",x:40,w:80},{h:"Time",x:125,w:45},{h:"Name",x:175,w:150},{h:"Guests",x:330,w:40},{h:"Table",x:375,w:45},{h:"Note",x:425,w:130}],
+      rows:bs.map(function(x){return [shDay(parse(x.date)),x.time,x.name,String(x.guests),x.table||"",x.note||""]}),notes:nt,notesTitle:"Day notes"};
+  }
+  var tx=($("shtxt").value||"").split("\n").filter(function(l){return l.trim()});
+  return {name:"sheet",title:($("shtit").value||"").trim()||"Sheet",sub:new Date().toLocaleDateString("en-IE",{weekday:"long",day:"numeric",month:"long",year:"numeric"}),size:13,noHead:true,rows:tx.map(function(l){return [l]})};
+}
+function shSave(bytes,name,m){
+  var blob=new Blob([bytes],{type:"application/pdf"}),file=null;
+  try{file=new File([blob],name,{type:"application/pdf"})}catch(e){}
+  var dl=function(){
+    var url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url)},4000);
+    m.textContent="PDF made. Check your Downloads or Files, then print it on A4.";
+  };
+  var std=function(){
+    if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+      navigator.share({files:[file],title:name}).then(function(){m.textContent="PDF ready."}).catch(function(e){if(e&&e.name!=="AbortError")dl()});
+    }else dl();
+  };
+  var cap=(window.claude&&window.claude.use)?window.claude.use("downloads"):Promise.resolve(null);
+  Promise.resolve(cap).catch(function(){return null}).then(function(d){
+    if(!d){std();return}
+    d.save({filename:name,data:bytes}).then(function(){m.textContent="PDF saved."},function(e){m.textContent=(e&&e.code==="declined")?"Cancelled.":"Could not save the PDF here."});
+  });
+}
+function shGo(kind,m){
+  try{
+    var d=shData(kind);
+    if(kind==="free"&&!d.rows.length){m.textContent="Type some text first.";return}
+    shSave(shBuild(d),d.name+".pdf",m);
+  }catch(err){m.textContent="Could not make the PDF: "+err.message}
+}
+$("shsel").onchange=function(){$("shfree").hidden=this.value!=="free"};
+$("shgo").onclick=function(){shGo($("shsel").value,$("shmsg"))};
+$("bkpdf").onclick=function(){
+  var m=$("bkpdfm");if(!m){m=document.createElement("div");m.id="bkpdfm";m.className="mnote";$("bkpdf").insertAdjacentElement("afterend",m)}
+  shGo("book",m);
+};
+
+/* ---- version label ---- */
+var APPV="v49 · 20 Oct 2026";
+try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
+$("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
 function niceMax(v){
   var steps=[1,1.2,1.5,2,2.5,3,4,5,6,8,10],p=Math.pow(10,Math.floor(Math.log(v)/Math.LN10));
@@ -3432,7 +3605,7 @@ function notify(t,b){
     }else plain();
   }catch(e){}
 }
-function eff(r){return (r.st==="ON"&&!r.en)?{st:"11:30",en:"Close",rhs:true}:{st:r.st,en:r.en,rhs:false}}
+function eff(r){return (r.st==="ON"&&!r.en)?{st:"14:30",en:"Close",rhs:true}:{st:r.st,en:r.en,rhs:false}}
 function checkRemind(){
   var m=remMin(),box=$("remind");
   var now=new Date(),ti=iso(now),nm=now.getHours()*60+now.getMinutes(),hit=null;
