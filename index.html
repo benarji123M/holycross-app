@@ -608,6 +608,7 @@ html.swp,html.swp body{overflow-x:hidden}
 .tabs button span{font-size:11.5px}
 @media (min-width:900px){.tabs{-webkit-mask-image:none;mask-image:none;padding-left:8px;padding-right:8px}.tabs button{flex:1 0 74px}}
 
+#bionudge[hidden]{display:none}
 /* ---- v46: euro to rupee, backup card ---- */
 .fxbig{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:4px 0 6px}
 .fxbig b{font-size:34px;font-variant-numeric:tabular-nums}
@@ -636,8 +637,9 @@ html.swp,html.swp body{overflow-x:hidden}
     <label for="p">PIN</label>
     <input id="p" type="password" inputmode="numeric" autocomplete="current-password">
     <button class="add" id="go">Log in</button>
-    <button class="add" id="bio" style="display:none;background:#7b1e2e;color:#fff">Use Face ID / fingerprint</button>
+    <button class="add" id="bio" style="display:none;background:#7b1e2e;color:#fff">Use fingerprint / Face ID</button>
     <div class="err" id="err"></div>
+    <div class="err" id="biohint" style="color:var(--mu);min-height:0;font-size:13px;margin-top:6px"></div>
   </div>
 </div>
 <main id="app" style="display:none">
@@ -676,6 +678,12 @@ html.swp,html.swp body{overflow-x:hidden}
   <div class="vok" id="vmsg"></div>
   <label for="varch">Hours for each Arches shift (estimate)</label><input id="varch" type="number" inputmode="decimal" min="0" max="16" step="0.5">
   <p class="mnote" style="margin:8px 0 0">Stamp 1G lets you work up to 40 hours a week for any employer, so all your jobs count together. The 20-hour term-time limit is for Stamp 2 students, not for you. This is a helper only. Check the official rules if you are unsure.</p>
+</div>
+<div class="card" id="bionudge" hidden>
+  <h2>Turn on fingerprint login</h2>
+  <p class="mnote" style="margin:0 0 10px">Log in with your finger or face instead of the PIN. On a laptop it uses Windows Hello. Your PIN still works. Do this once on each phone or laptop.</p>
+  <div class="bkbtns"><button class="add" id="bionow">Turn on</button><button class="add ghost" id="biolater">Not now</button></div>
+  <div class="bkmsg2" id="biomsg3"></div>
 </div>
 <div class="card" id="fxcard">
   <h2>Euro to rupee <span style="font-weight:400;color:var(--mu);font-size:13px">today</span></h2>
@@ -918,7 +926,7 @@ html.swp,html.swp body{overflow-x:hidden}
 
 <div class="card">
   <h2>Face ID / fingerprint login</h2>
-  <div class="err" style="color:var(--mu);text-align:left;margin:0 0 8px;min-height:0">Log in with your face or finger instead of typing the PIN. Your PIN still works. Turn it on once on each phone, inside the app you open from the home screen.</div>
+  <div class="err" style="color:var(--mu);text-align:left;margin:0 0 8px;min-height:0">Log in with your face or finger instead of typing the PIN. Your PIN still works. Turn it on once on each phone or laptop. On a laptop it uses Windows Hello (fingerprint, face or your Windows PIN).</div>
   <button class="add" id="bioset" style="margin-top:0">Turn on</button>
   <div class="err" id="biomsg" style="color:var(--mu);min-height:0"></div>
 </div>
@@ -2929,7 +2937,7 @@ setInterval(function(){fxFetch(false)},3600000);
 fxRender();fxFetch(false);
 
 /* ---- v46: backup card ---- */
-var BKX={"hours_auth_v1":1,"hours_bio_v1":1,"hours_lastbk_v1":1,"hours_bkfirst_v1":1,"hc_fx_v1":1};
+var BKX={"hours_auth_v1":1,"hours_bio_v1":1,"hc_bio_nudge_v1":1,"hours_lastbk_v1":1,"hours_bkfirst_v1":1,"hc_fx_v1":1};
 var bkPending=null;
 function bkAll(){
   var o={},n=0;
@@ -3025,27 +3033,34 @@ $("lo").onclick=function(){show(false)};
 document.addEventListener("visibilitychange",function(){if(document.hidden){show(false);$("p").value=""}});
 window.addEventListener("pagehide",function(){show(false);$("p").value=""});
 
-/* ---- Face ID / fingerprint (this phone only) ---- */
+/* ---- v47: fingerprint / Face ID / Windows Hello, phone and laptop ---- */
 function b64(buf){var s="";new Uint8Array(buf).forEach(function(c){s+=String.fromCharCode(c)});return btoa(s)}
 function unb64(s){var b=atob(s),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
 function bioId(){try{return localStorage.getItem("hours_bio_v1")||""}catch(e){return ""}}
 function bioOK(){return !!(window.PublicKeyCredential&&navigator.credentials&&window.isSecureContext)}
+var BIONUDGE="hc_bio_nudge_v1";
+function nudgeOff(){try{return localStorage.getItem(BIONUDGE)==="1"}catch(e){return false}}
 function bioRefresh(){
-  $("bio").style.display=(bioId()&&bioOK())?"block":"none";
-  $("bioset").textContent=bioId()?"Turn off":"Turn on";
+  var on=!!bioId(),ok=bioOK();
+  $("bio").style.display=(on&&ok)?"block":"none";
+  $("bioset").textContent=on?"Turn off":"Turn on";
+  var h=$("biohint");
+  if(h)h.textContent=on&&ok?"":(!ok?"Fingerprint needs a safe (https) address, and a device with a fingerprint, Face ID or Windows Hello.":"Fingerprint is not turned on here yet. Log in with your PIN, then turn it on from the box on the Dashboard.");
+  var n=$("bionudge");
+  if(n)n.hidden=!($("app").style.display==="block"&&ok&&!on&&!nudgeOff());
 }
 bioRefresh();
+var _showBio=show;
+show=function(ok){_showBio(ok);bioRefresh()};
 $("bio").onclick=function(){
   var id=bioId();if(!id)return;
   $("err").textContent="";
   navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:"public-key",id:unb64(id)}],userVerification:"required",timeout:60000}}).then(function(c){
     if(c){$("p").value="";show(true)}
-  }).catch(function(){$("err").textContent="Face ID / fingerprint did not work. Use your PIN."});
+  }).catch(function(){$("err").textContent="Fingerprint did not work. Use your PIN."});
 };
-$("bioset").onclick=function(){
-  var m=$("biomsg");
-  if(bioId()){try{localStorage.removeItem("hours_bio_v1")}catch(e){}m.textContent="Turned off.";bioRefresh();return}
-  if(!bioOK()){m.textContent="This phone or browser can not do it here. Use your PIN.";return}
+function bioTurnOn(m,done){
+  if(!bioOK()){m.textContent="This browser can not do it here. It needs a safe (https) address. Use your PIN.";if(done)done(false);return}
   navigator.credentials.create({publicKey:{
     challenge:crypto.getRandomValues(new Uint8Array(32)),
     rp:{name:"Holy Cross"},
@@ -3054,9 +3069,21 @@ $("bioset").onclick=function(){
     authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required",residentKey:"discouraged"},
     timeout:60000,attestation:"none"}}).then(function(c){
     try{localStorage.setItem("hours_bio_v1",b64(c.rawId))}catch(e){}
-    m.textContent="Turned on. Next time, tap the Face ID / fingerprint button on the login screen.";bioRefresh();
-  }).catch(function(){m.textContent="Not turned on. You may have cancelled, or this phone has no Face ID or fingerprint set up."});
+    m.textContent="Turned on. Next time, tap the fingerprint button on the login screen.";bioRefresh();if(done)done(true);
+  }).catch(function(){
+    m.textContent="Not turned on. You may have cancelled, or this device has no fingerprint, Face ID or Windows Hello set up. On a Windows laptop: Settings, Accounts, Sign-in options, then set up Windows Hello.";
+    if(done)done(false);
+  });
+}
+$("bioset").onclick=function(){
+  var m=$("biomsg");
+  if(bioId()){try{localStorage.removeItem("hours_bio_v1")}catch(e){}m.textContent="Turned off.";bioRefresh();return}
+  bioTurnOn(m);
 };
+$("bionow").onclick=function(){
+  bioTurnOn($("biomsg3"),function(ok){if(ok)setTimeout(function(){$("bionudge").hidden=true},2200)});
+};
+$("biolater").onclick=function(){try{localStorage.setItem(BIONUDGE,"1")}catch(e){}$("bionudge").hidden=true};
 
 checkBk();
 document.addEventListener("visibilitychange",function(){if(!document.hidden)checkBk()});
