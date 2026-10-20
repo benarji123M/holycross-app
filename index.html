@@ -624,6 +624,17 @@ html.swp,html.swp body{overflow-x:hidden}
 .bkbtns .add{margin:0}
 @media (max-width:360px){.bkbtns{grid-template-columns:1fr}}
 .bkmsg2{font-size:13px;color:var(--mu);margin:10px 0 0;white-space:pre-wrap}
+
+.enbig{font-size:28px;font-weight:700;line-height:1.25;margin:6px 0 8px}
+.enc{display:inline-block;font-size:12px;font-weight:700;color:var(--ac);border:1px solid var(--bd);border-radius:99px;padding:2px 10px}
+.enx{display:flex;align-items:center;gap:10px}
+.enxp{height:8px;border-radius:99px;background:var(--bd);overflow:hidden;margin:6px 0}
+.enxp i{display:block;height:100%;background:var(--ac)}
+.eno{display:block;width:100%;text-align:left;margin-top:8px;padding:12px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font-size:16px}
+.eno.ok{border-color:#1a7f4b;background:rgba(26,127,75,.14)}
+.eno.no{border-color:#b42318;background:rgba(180,35,24,.12)}
+.ensp{border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:99px;padding:6px 12px;font-size:16px;cursor:pointer}
+.enm{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:10px;margin-top:8px;font-size:16px}
 </style>
 </head>
 <body>
@@ -672,6 +683,7 @@ html.swp,html.swp body{overflow-x:hidden}
 
 <div class="card" id="withme" style="display:none"></div>
 <div class="card" id="payday"></div>
+<div class="card" id="engcard"></div>
 <div class="card" id="visa">
   <h2>Hours this week</h2>
   <div class="vst"><div><b id="vhc">0h 00m</b><small>Holy Cross (tracked)</small></div><div><b id="var">0h 00m</b><small>Arches (estimate)</small></div><div><b id="vtot">0h 00m</b><small>Total this week</small></div></div>
@@ -1050,6 +1062,12 @@ html.swp,html.swp body{overflow-x:hidden}
 
 <div id="toast" class="toast"></div>
 
+<section id="v-eng" style="display:none">
+<h1 class="pg">English</h1>
+<div class="card" id="enh"></div>
+<div class="chips2" id="ent"></div>
+<div class="card" id="enb"></div>
+</section>
 <nav class="tabs" id="tabs" aria-label="Pages">
   <button data-v="dash" class="on"><i>🏠</i><span>Home</span></button>
   <button data-v="goals"><i>🎯</i><span>Goals</span></button>
@@ -1090,6 +1108,7 @@ html.swp,html.swp body{overflow-x:hidden}
     <button class="it" data-go="walk" title="Walk" data-k="steps km distance gps walking"><i>🚶</i><span class="lb">Walk</span></button>
     <div class="dl">Fun</div>
     <button class="it" data-go="game" title="Games" data-k="snake play"><i>🎮</i><span class="lb">Games</span></button>
+    <button class="it" data-go="eng" title="English" data-k="english learn words slang irish phrases quiz"><i>🗣</i><span class="lb">English</span></button>
     <div class="dnone" id="mnone" hidden>Nothing found</div>
     <div class="dfoot">Keys: 1–8 jump · / or Ctrl+K search</div>
   </aside>
@@ -1856,6 +1875,7 @@ var CMDS=[
   {i:"🏦",t:"Open loans I took",k:"borrowed taken bank debt",run:function(){goTab("money");MS.tab="taken";renderMoney()}},
   {i:"🐷",t:"Open savings",k:"saving pot money",run:function(){goTab("money");MS.tab="save";renderMoney()}},
   {i:"🚶",t:"Open walk tracker",k:"steps km distance gps walking health",run:function(){goTab("walk")}},
+  {i:"🗣",t:"Open English",k:"learn words slang irish phrases quiz speak",run:function(){goTab("eng")}},
   {i:"🎮",t:"Open games",k:"play snake fun",run:function(){goTab("game")}},
   {i:"🍽",t:"Open Service Hub",k:"floor plan allergens tip split food cost tonight",run:function(){openLink(hubUrl())}},
   {i:"🔗",t:"Set Service Hub link",k:"change address url hub",run:function(){return "hub"}},
@@ -2842,6 +2862,7 @@ tabsEl.addEventListener("click",function(e){
     if($("dwr").classList.contains("open")||!$("cmd").hidden)return true;
     var sh=$("sheet");if(sh&&sh.classList.contains("open"))return true;
     var g=$("v-game");if(g&&g.style.display!=="none")return true;
+    var en=$("v-eng");if(en&&en.style.display!=="none")return true;
     try{if(String(window.getSelection())!=="")return true}catch(e){}
     return false;
   }
@@ -3034,6 +3055,173 @@ $("bkyes").onclick=function(){
 };
 $("bkrem").onclick=function(){goTab("dash");setTimeout(function(){try{$("bkcard").scrollIntoView({block:"center",behavior:"smooth"})}catch(e){}},150)};
 bkStatus();setInterval(bkStatus,3600000);
+
+
+/* ---- v50: English hub ---- */
+var EK="hc_eng_v1",E={box:{},xp:0,days:[],words:[],td:{d:"",ids:[],done:0},qb:0};
+try{var _e=JSON.parse(localStorage.getItem(EK)||"null");if(_e&&typeof _e==="object"){for(var _k in _e)E[_k]=_e[_k]}}catch(e){}
+function eSave(){try{localStorage.setItem(EK,JSON.stringify(E))}catch(e){}}
+var EC={"bar":"Bar","slang":"Irish slang","cust":"Customers","help":"Help me","work":"Work","job":"Interview"},EP=[["bar","A pint of the black stuff","A pint of Guinness. People say it for fun.","Two pints of the black stuff, please."],["bar","Same again?","Do you want another drink, the same as before?","Same again, lads?"],["bar","Last orders","The last time to buy a drink before the bar closes.","Last orders in ten minutes!"],["bar","A round","A drink for every person in the group. One person pays.","It's my round. What are you having?"],["bar","On the house","Free. The bar pays, not the customer.","This one is on the house."],["bar","Run a tab","Keep the bill open. The customer pays at the end.","Can I run a tab for the night?"],["bar","Sláinte","Cheers. It is an Irish word. Say: SLAWN-cha.","Sláinte, everyone!"],["bar","A glass of Guinness","A half pint of Guinness. A glass is smaller than a pint.","A glass of Guinness and a pint of lager, please."],["bar","A mineral","A fizzy soft drink, like Coke or 7Up.","I'll have a mineral, I'm driving."],["bar","A short","A small strong drink, like whiskey or vodka.","A short and a pint, please."],["bar","Crisps","Thin salty potato snacks. In America they say chips.","A packet of crisps, please."],["bar","Top up","Fill a drink up again.","Can I top that up for you?"],["slang","Grand","Fine or okay.","How are you? Grand, thanks."],["slang","Sound","Good, kind, or okay.","He's sound. He helped me a lot."],["slang","What's the craic?","How are you? What is new? Craic means fun or news. Say: crack.","Howya! What's the craic?"],["slang","Howya","Hello. It means: how are you?","Howya, Ben!"],["slang","Giving out","Complaining.","She was giving out about the rain."],["slang","Banjaxed","Broken. It does not work.","The coffee machine is banjaxed."],["slang","Yoke","A thing. People use it when they forget the name.","Pass me that yoke on the shelf."],["slang","Eejit","A silly person. It can be friendly.","Don't be an eejit!"],["slang","Gas","Very funny.","That story was gas!"],["slang","Fair play","Well done. Good for you.","Fair play to you, great job."],["slang","Deadly","Great or excellent.","That's deadly!"],["slang","Messages","Shopping for food. It does not mean text messages.","I'm going for the messages."],["slang","The jacks","The toilet.","Where are the jacks?"],["slang","Gaff","A house or home.","Come to my gaff for dinner."],["slang","The guards","The police. The Irish word is Gardaí.","Call the guards."],["slang","Slagging","Joking or teasing in a friendly way.","They were slagging me about my hat."],["slang","Sure look","A phrase for 'it is what it is'. People shrug when they say it.","Sure look, we'll try again tomorrow."],["slang","Grand so","Okay then. People say it to end a talk.","Grand so, see you tomorrow."],["slang","Lashing rain","Very heavy rain.","It was lashing rain all day."],["slang","Scarlet","Very embarrassed. Your face goes red.","I was scarlet after I fell."],["slang","Press","A cupboard.","The cups are in the press."],["cust","What can I get you?","A polite way to ask: what do you want?","Hi there, what can I get you?"],["cust","Are you being looked after?","Is someone already helping you?","Are you being looked after?"],["cust","Table for how many?","How many people are in your group?","Table for how many?"],["cust","Do you have a booking?","Did you reserve a table before?","Do you have a booking with us tonight?"],["cust","Are you ready to order?","Do you know what food you want?","Are you ready to order?"],["cust","Any allergies?","Does any food make you sick?","Any allergies I should tell the kitchen?"],["cust","How would you like your steak?","Rare, medium or well done?","How would you like your steak?"],["cust","Is everything okay with your meal?","A check to see if the food is good.","Is everything okay with your meal?"],["cust","Would you like the bill?","Do you want to pay now?","Would you like the bill?"],["cust","Cash or card?","How will you pay?","That's twenty-four fifty. Cash or card?"],["cust","Sorry for the wait","I am sorry you waited a long time.","Sorry for the wait, we're very busy."],["cust","I'll be right with you","I will come to you very soon.","I'll be right with you!"],["cust","Enjoy your meal","A kind thing to say when you bring food.","Here you go. Enjoy your meal!"],["cust","Take-away or eating in?","Will you take the food home or eat here?","Take-away or eating in?"],["help","Sorry, say that again?","Use it when you did not hear well. Smile when you say it.","Sorry, say that again, please?"],["help","A bit slower, please","Use it when someone talks too fast.","Can you speak a bit slower, please?"],["help","What does that mean?","Use it when you do not know a word. It is a smart question.","What does banjaxed mean?"],["help","Could you spell that?","Ask for the letters of a name or a word.","Could you spell that for me?"],["help","Give me a second","Wait a little. I need a short time.","Give me a second, I'll check."],["help","I'll find out","I do not know now. I will ask and come back to you.","I'll find out and tell you."],["help","No bother","It is okay. No problem. Also means: you are welcome.","Thanks for the help. No bother!"],["work","Cover my shift","Work in my place when I cannot come.","Can you cover my shift on Friday?"],["work","A split shift","Work in two parts, with a long break in the middle.","I'm on a split shift today."],["work","Clock in","Record the time you start work.","Don't forget to clock in."],["work","Give me a shout","Call me or tell me. Use it when you need help.","Give me a shout if you're stuck."],["work","Heads up","A short warning before something happens.","Heads up, a big group is coming."],["work","Annual leave","Paid holidays from work.","I'd like to take annual leave in June."],["work","Overtime","Extra hours after your normal hours.","I did four hours of overtime."],["work","Payslip","The paper that shows your pay and tax.","I got my payslip on Wednesday."],["job","Tell me about yourself","A common first question in an interview. Talk about your work and skills.","Tell me about yourself."],["job","I'm a quick learner","I learn new things fast.","I'm a quick learner and I like new tools."],["job","I work well in a team","I like working with other people.","I work well in a team and I listen."],["job","I have experience in...","I did this work before.","I have experience in SQL and Power BI."],["job","Notice period","The time you must keep working before you leave a job.","My notice period is two weeks."],["job","I'm available to start...","The day I can begin work.","I'm available to start next Monday."],["job","Do you have any questions for us?","Often the last question. Always ask one.","Yes, what does a normal week look like?"],["job","Strengths and weaknesses","Your good points, and points you want to improve.","One weakness is I am shy, but I am working on it."]],ER=[["Customer: \"Howya, what's the craic?\"",["I'm grand, thanks. And you?","I do not understand.","The craic is a drink."],0,"Howya and what's the craic are friendly hellos. Just say you are grand and ask back."],["Customer: \"Two pints of the black stuff, please.\"",["Two Guinness, coming up.","We have no black.","Which black stuff?"],0,"The black stuff means Guinness."],["Customer: \"Same again, please.\"",["Two of the same, coming up!","What is again?","I do not remember."],0,"Same again means the same drinks as before. Repeat the order back."],["Customer: \"Can I run a tab?\"",["Of course. Can I hold your card?","No.","What is a tab?"],0,"A tab is an open bill. Most bars hold a card."],["Customer: \"That's deadly, thanks a million.\"",["No bother!","I am not dead.","What is a million?"],0,"Deadly means great. Thanks a million means thank you very much. No bother is a friendly reply."],["Colleague: \"The coffee machine is banjaxed.\"",["Okay, I'll tell the manager.","I will fix my banjax.","What is the coffee?"],0,"Banjaxed means broken."],["Colleague: \"Can you cover my shift on Friday?\"",["Let me check my rota. I'll tell you today.","Friday is a day.","I do not have a cover."],0,"Cover my shift means work my hours for me. Check first, then answer."],["Customer: \"My steak is a bit tough.\"",["I'm sorry. I'll tell the kitchen right away.","That is normal.","You should chew more."],0,"Be polite. Say sorry and act fast."],["Customer: \"Where are the jacks?\"",["Down the hall, on the left.","We sell no jacks.","Jacks is a card game."],0,"The jacks means the toilet."],["Customer: \"Can I get a mineral and a packet of crisps?\"",["Sure. Coke, 7Up or Fanta?","We have no mineral.","What is crisps?"],0,"A mineral is a fizzy drink. Crisps are thin potato snacks. Ask which drink."],["Customer: \"A glass of Guinness, please.\"",["A half pint. Coming up.","A glass of water?","We do not have glasses."],0,"A glass of Guinness is a half pint."],["Customer: \"Sure look, we'll have the bill, so.\"",["Of course. Cash or card?","What is so?","Look at what?"],0,"Sure look and so are small words that sound Irish. The meaning is: we want the bill."],["Customer: \"Fair play to the chef, that was gas!\"",["Thank you, I'll tell him.","Why is it gas?","The chef is busy."],0,"Fair play means well done. Gas means very funny or very good."],["Manager: \"Give me a shout if you're stuck.\"",["Thanks, I will.","I do not shout.","Why shout?"],0,"Give me a shout means: tell me or call me if you need help."]];
+var ELV=[[0,"Rookie"],[100,"Barback"],[300,"Barman"],[700,"Pro"],[1500,"Local"],[3000,"Legend"]];
+var eTab="learn",eQ=null,eSes=null,eRep=null,eShow=false,eArm="";
+TT.eng="English";
+function eDay(){return iso(new Date())}
+function eDate(n){var d=new Date();d.setDate(d.getDate()+n);return iso(d)}
+function eShuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function eMark(){var d=eDay();if(E.days.indexOf(d)<0){E.days.push(d);if(E.days.length>400)E.days=E.days.slice(-400)}}
+function eAdd(n){E.xp+=n;eMark();eSave()}
+function eStreak(){var s=0,d=new Date();if(E.days.indexOf(iso(d))<0)d.setDate(d.getDate()-1);while(E.days.indexOf(iso(d))>=0){s++;d.setDate(d.getDate()-1)}return s}
+function eLevel(){var i=0;for(var j=0;j<ELV.length;j++)if(E.xp>=ELV[j][0])i=j;return i}
+function eSpeak(t){try{var u=new SpeechSynthesisUtterance(t);u.lang="en-IE";u.rate=0.85;var vs=speechSynthesis.getVoices(),v=vs.filter(function(x){return x.lang==="en-IE"||x.lang==="en_IE"})[0]||vs.filter(function(x){return /^en[-_]GB/.test(x.lang)})[0];if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+function eBuild(more){
+  var d=eDay(),i;
+  if(E.td.d!==d)E.td={d:d,ids:[],done:0};
+  if(more||!E.td.ids.length){
+    var pool=[];for(i=0;i<EP.length;i++)if(!E.box[i]&&E.td.ids.indexOf(i)<0)pool.push(i);
+    pool.sort(function(a,b){return ((a*7919)%101)-((b*7919)%101)});
+    E.td.ids=E.td.ids.concat(pool.slice(0,3));eSave();
+  }
+  var rev=[];Object.keys(E.box).forEach(function(k){k=+k;if(E.box[k].d<=d&&E.td.ids.indexOf(k)<0)rev.push(k)});
+  rev.sort(function(a,b){return E.box[a].d<E.box[b].d?-1:1});
+  var q=rev.slice(0,8).map(function(id){return{id:id,n:false}});
+  E.td.ids.forEach(function(id){if(!E.box[id])q.push({id:id,n:true})});
+  eSes={q:q,i:0,rq:{}};eShow=false;
+}
+function eAns(c,ok){
+  var iv=[1,2,4,7,14,30,60],b=E.box[c.id],l=ok?(b?Math.min(6,b.l+1):1):0;
+  E.box[c.id]={l:l,d:eDate(iv[l])};E.td.done++;
+  eAdd(ok?5:1);
+  if(!ok&&!eSes.rq[c.id]){eSes.rq[c.id]=1;eSes.q.push({id:c.id,n:false,again:true})}
+}
+function eTabs(){
+  var t=[["learn","Learn"],["quiz","Quiz"],["reply","Reply"],["words","My words"]],h="";
+  t.forEach(function(x){h+='<button class="'+(eTab===x[0]?"on":"")+'" data-e="tab" data-v="'+x[0]+'">'+x[1]+'</button>'});
+  $("ent").innerHTML=h;
+}
+function eHead(){
+  var li=eLevel(),cur=ELV[li],nx=ELV[li+1],pct=nx?Math.round((E.xp-cur[0])/(nx[0]-cur[0])*100):100,st=eStreak();
+  var kn=Object.keys(E.box).filter(function(k){return E.box[k].l>=1}).length;
+  $("enh").innerHTML='<div class="enx"><b style="font-size:18px">Level '+(li+1)+': '+cur[1]+'</b><span style="margin-left:auto;font-weight:700">🔥 '+st+' day'+(st===1?"":"s")+'</span></div><div class="enxp"><i style="width:'+pct+'%"></i></div><div class="mnote" style="margin:0">'+E.xp+' XP'+(nx?" · "+(nx[0]-E.xp)+" XP to "+nx[1]:" · Top level!")+" · "+kn+" of "+EP.length+" phrases learned · "+E.words.length+" of my words</div>";
+}
+function eSayBtn(t){return '<button class="ensp" data-e="say" data-t="'+esc(t)+'" aria-label="Hear it">🔊</button>'}
+function eLearn(){
+  if(!eSes)eBuild(false);
+  var h="";
+  if(eSes.i>=eSes.q.length){
+    h='<h2>Well done! 🎉</h2><p class="mnote">Cards done today: '+E.td.done+'. Come back tomorrow. Old cards come back at the right time, so you do not forget them.</p><div class="btns"><button class="add" data-e="more">Learn 3 more</button><button class="add ghost" data-e="tab" data-v="quiz">Take the quiz</button></div>';
+  }else{
+    var c=eSes.q[eSes.i],p=EP[c.id];
+    h='<div class="mnote" style="margin:0 0 6px">Card '+(eSes.i+1)+" of "+eSes.q.length+' · <span class="enc">'+(c.n?"New":"Review")+'</span> <span class="enc">'+esc(EC[p[0]])+'</span></div><div class="enbig">“'+esc(p[1])+"” "+eSayBtn(p[1])+"</div>";
+    if(!eShow)h+='<div class="mnote">Think first. What does it mean? Say it out loud.</div><button class="add" data-e="show">Show the meaning</button>';
+    else h+='<div class="enm"><b>Meaning:</b> '+esc(p[2])+'</div><div class="enm"><b>Example:</b> '+esc(p[3])+" "+eSayBtn(p[3])+'</div><div class="btns"><button class="add ghost" data-e="again">Again</button><button class="add" data-e="knew">I knew it</button></div><div class="mnote" style="margin:8px 0 0">Say the phrase 3 times. Try to use it at work today.</div>';
+  }
+  $("enb").innerHTML=h;
+}
+function eQuizStart(){
+  var all=EP.map(function(_,i){return i}),learned=eShuffle(Object.keys(E.box).map(Number)).slice(0,5);
+  var pick=learned.concat(eShuffle(all.filter(function(i){return learned.indexOf(i)<0}))).slice(0,5);
+  eQ={i:0,sc:0,pk:-1,qs:pick.map(function(id){
+    var wr=eShuffle(all.filter(function(x){return x!==id&&EP[x][2]!==EP[id][2]})).slice(0,3);
+    return{id:id,o:eShuffle(wr.concat([id]))}})};
+}
+function eQuiz(){
+  var h="";
+  if(!eQ)h='<h2>Guess the slang</h2><p class="mnote">5 questions. You get 10 XP for each right answer. Wrong answers come back in your Learn cards.</p>'+(E.qb?'<p class="mnote">Your best: '+E.qb+" of 5</p>":"")+'<button class="add" data-e="qstart">Start</button>';
+  else if(eQ.i>=eQ.qs.length)h='<h2>You got '+eQ.sc+" of "+eQ.qs.length+(eQ.sc===5?" 🏆":"")+'</h2><p class="mnote">+'+(eQ.sc*10)+' XP. '+(eQ.sc<5?"The ones you missed will come back in Learn.":"Perfect!")+'</p><div class="btns"><button class="add" data-e="qstart">Play again</button><button class="add ghost" data-e="tab" data-v="learn">Go to Learn</button></div>';
+  else{
+    var q=eQ.qs[eQ.i],p=EP[q.id];
+    h='<div class="mnote" style="margin:0 0 6px">Question '+(eQ.i+1)+" of "+eQ.qs.length+'</div><div class="enbig">What does “'+esc(p[1])+"” mean? "+eSayBtn(p[1])+"</div>";
+    q.o.forEach(function(x,ix){
+      var cls="eno";if(eQ.pk>=0){if(x===q.id)cls+=" ok";else if(ix===eQ.pk)cls+=" no"}
+      h+='<button class="'+cls+'" data-e="qpick" data-i="'+ix+'"'+(eQ.pk>=0?" disabled":"")+">"+esc(EP[x][2])+"</button>";
+    });
+    if(eQ.pk>=0)h+='<div class="enm"><b>'+(q.o[eQ.pk]===q.id?"Right! ":"Not this time. ")+"</b>Example: "+esc(p[3])+" "+eSayBtn(p[3])+'</div><button class="add" data-e="qnext">'+(eQ.i+1>=eQ.qs.length?"See my score":"Next")+"</button>";
+  }
+  $("enb").innerHTML=h;
+}
+function eRepStart(){
+  var ix=eShuffle(ER.map(function(_,i){return i})).slice(0,5);
+  eRep={i:0,sc:0,pk:-1,qs:ix.map(function(i){return{s:i,o:eShuffle([0,1,2])}})};
+}
+function eReply(){
+  var h="";
+  if(!eRep)h='<h2>Serve the customer</h2><p class="mnote">A customer or a colleague says something. You choose the best answer. 5 situations. 10 XP for each right answer.</p><button class="add" data-e="rstart">Start</button>';
+  else if(eRep.i>=eRep.qs.length)h='<h2>'+eRep.sc+" of "+eRep.qs.length+" right"+(eRep.sc===5?" 🏆":"")+'</h2><p class="mnote">+'+(eRep.sc*10)+' XP.</p><div class="btns"><button class="add" data-e="rstart">Play again</button><button class="add ghost" data-e="tab" data-v="learn">Go to Learn</button></div>';
+  else{
+    var q=eRep.qs[eRep.i],s=ER[q.s];
+    h='<div class="mnote" style="margin:0 0 6px">Situation '+(eRep.i+1)+" of "+eRep.qs.length+'</div><div class="enbig" style="font-size:22px">'+esc(s[0])+" "+eSayBtn(s[0].replace(/^[A-Za-z]+: /,"").replace(/"/g,""))+"</div>";
+    q.o.forEach(function(x,ix){
+      var cls="eno";if(eRep.pk>=0){if(x===s[2])cls+=" ok";else if(ix===eRep.pk)cls+=" no"}
+      h+='<button class="'+cls+'" data-e="rpick" data-i="'+ix+'"'+(eRep.pk>=0?" disabled":"")+">"+esc(s[1][x])+"</button>";
+    });
+    if(eRep.pk>=0)h+='<div class="enm"><b>'+(q.o[eRep.pk]===s[2]?"Right! ":"Not this time. ")+"</b>"+esc(s[3])+'</div><button class="add" data-e="rnext">'+(eRep.i+1>=eRep.qs.length?"See my score":"Next")+"</button>";
+  }
+  $("enb").innerHTML=h;
+}
+function eWords(){
+  var h='<h2>My words</h2><p class="mnote">Heard a new word? Write it here. Ask a colleague what it means, then add the meaning. You get 5 XP.</p><label for="enw">Word or phrase</label><input id="enw" type="text" maxlength="60" autocomplete="off"><label for="enm2">Meaning (add it later if you do not know)</label><input id="enm2" type="text" maxlength="120" autocomplete="off"><label for="enp">Where did you hear it? (optional)</label><input id="enp" type="text" maxlength="60" autocomplete="off"><button class="add" data-e="wadd">Save the word</button>';
+  if(!E.words.length)h+='<div class="empty">No words yet.</div>';
+  E.words.slice().reverse().forEach(function(w,r){
+    var i=E.words.length-1-r;
+    h+='<div class="enm"><b>'+esc(w.w)+"</b> "+eSayBtn(w.w)+(w.m?"<br>"+esc(w.m):'<br><i style="color:var(--mu)">Meaning not added yet</i>')+(w.p?'<br><small style="color:var(--mu)">Heard: '+esc(w.p)+"</small>":"")+'<div class="btns" style="margin-top:6px"><button class="ensp" data-e="wdel" data-i="'+i+'">'+(eArm===String(i)?"Tap again":"Delete")+"</button></div></div>";
+  });
+  $("enb").innerHTML=h;
+}
+function eRender(){
+  eHead();eTabs();
+  if(eTab==="learn")eLearn();else if(eTab==="quiz")eQuiz();else if(eTab==="reply")eReply();else eWords();
+  eDash();
+}
+function eDash(){
+  var el=$("engcard");if(!el)return;
+  var done=(E.td.d===eDay())?E.td.done:0,st=eStreak(),li=eLevel();
+  el.innerHTML='<h2>English today <span style="font-weight:400;color:var(--mu);font-size:13px">🔥 '+st+" day"+(st===1?"":"s")+' · Level '+(li+1)+" "+ELV[li][1]+'</span></h2><div class="mnote" style="margin:0 0 6px">'+(done?done+" card"+(done===1?"":"s")+" done today. Nice!":"3 new phrases are waiting for you.")+'</div><button class="add" id="engopen" style="margin-top:0">Open English</button>';
+}
+$("v-eng").addEventListener("click",function(e){
+  var b=e.target.closest("[data-e]");if(!b)return;
+  var a=b.getAttribute("data-e"),i=parseInt(b.getAttribute("data-i"),10);
+  if(a==="say"){eSpeak(b.getAttribute("data-t"));return}
+  if(a==="tab"){eTab=b.getAttribute("data-v");eRender();return}
+  if(a==="show"){eShow=true}
+  else if(a==="knew"||a==="again"){eAns(eSes.q[eSes.i],a==="knew");eSes.i++;eShow=false}
+  else if(a==="more"){eBuild(true)}
+  else if(a==="qstart"){eQuizStart()}
+  else if(a==="qpick"&&eQ.pk<0){
+    eQ.pk=i;var q=eQ.qs[eQ.i];
+    if(q.o[i]===q.id){eQ.sc++;eAdd(10)}else{E.box[q.id]={l:0,d:eDay()};eMark();eSave()}
+  }
+  else if(a==="qnext"){eQ.i++;eQ.pk=-1;if(eQ.i>=eQ.qs.length&&eQ.sc>E.qb){E.qb=eQ.sc;eSave()}}
+  else if(a==="rstart"){eRepStart()}
+  else if(a==="rpick"&&eRep.pk<0){
+    eRep.pk=i;var r=eRep.qs[eRep.i];
+    if(r.o[i]===ER[r.s][2]){eRep.sc++;eAdd(10)}
+  }
+  else if(a==="rnext"){eRep.i++;eRep.pk=-1}
+  else if(a==="wadd"){
+    var w=$("enw").value.trim();if(!w){toast("Type the word first");return}
+    E.words.push({w:w,m:$("enm2").value.trim(),p:$("enp").value.trim()});eAdd(5);toast("Word saved");
+  }
+  else if(a==="wdel"){
+    if(eArm===String(i)){E.words.splice(i,1);eSave();eArm=""}
+    else{eArm=String(i);setTimeout(function(){if(eArm===String(i)){eArm="";if(eTab==="words")eRender()}},3000)}
+  }
+  eRender();
+});
+document.addEventListener("click",function(e){if(e.target&&e.target.id==="engopen")goTab("eng")});
+(function(){
+  var _g=goTab;
+  goTab=function(v){
+    if(v==="eng"){
+      ["dash","goals","roster","book","pay","money","walk","game"].forEach(function(n){$("v-"+n).style.display="none"});
+      $("v-eng").style.display="";if(window.snakeStop)snakeStop();
+      menuMark(v);closeMenu();
+      Array.prototype.forEach.call(tabsEl.querySelectorAll("button"),function(b){b.className=""});
+      window.scrollTo(0,0);eSes=null;eRender();return;
+    }
+    $("v-eng").style.display="none";_g(v);
+  };
+})();
+eDash();
 
 var HASH="ce43ef7ac0487be787746eebe94f8648e87cd92c64b4d2762ed1fbe1b42a6ceb", AUTH="hours_auth_v1";
 function sha(t){
@@ -3477,7 +3665,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v49 · 20 Oct 2026";
+var APPV="v50 · 20 Oct 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
