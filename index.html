@@ -635,6 +635,40 @@ html.swp,html.swp body{overflow-x:hidden}
 .eno.no{border-color:#b42318;background:rgba(180,35,24,.12)}
 .ensp{border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:99px;padding:6px 12px;font-size:16px;cursor:pointer}
 .enm{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:10px;margin-top:8px;font-size:16px}
+
+.add:disabled{opacity:.4;cursor:not-allowed}
+.fitrow{display:flex;gap:10px;align-items:center}
+.fitrow input{flex:1;min-width:0}
+.fitbig{font-size:54px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;margin:6px 0}
+.nrec{font-size:14px;font-weight:600;color:var(--mu);margin-top:8px;min-height:0}
+.nrec.on{color:#b42318;animation:nrp 1s ease-in-out infinite}
+@keyframes nrp{50%{opacity:.45}}
+.plr{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--bd);color:var(--tx);padding:12px 4px;cursor:pointer}
+.plr:last-child{border-bottom:0}
+.plr i{font-style:normal;font-size:22px;width:30px;text-align:center}
+.plr span{flex:1;min-width:0}
+.plr b{display:block;font-size:16px}
+.plr small{display:block;color:var(--mu);font-size:14px;overflow:hidden;text-overflow:ellipsis}
+.plr em{font-style:normal;color:var(--mu);font-size:22px}
+.mepic{position:relative;z-index:1;width:130px;height:160px;margin:14px auto 0;border-radius:28px 28px 60px 28px;overflow:hidden;border:3px solid rgba(255,255,255,.85);box-shadow:0 14px 34px rgba(0,0,0,.35);animation:mefloat 5s ease-in-out infinite;will-change:transform}
+.mepic img{width:100%;height:100%;object-fit:cover;object-position:50% 20%;display:block;transition:transform .15s ease-out}
+@keyframes mefloat{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-12px) rotate(1.5deg)}}
+@media (prefers-reduced-motion:reduce){.mepic{animation:none}}
+@media (min-width:900px){.mepic{position:absolute;right:48px;bottom:56px;margin:0;width:250px;height:300px;border-radius:36px}}
+@media (min-width:1000px){
+  .dwr{right:auto;width:270px;pointer-events:none;z-index:30}
+  .dwr .bdp{display:none}
+  .dwr aside{pointer-events:auto;position:absolute;top:0;bottom:0;left:0;right:auto;width:270px;max-height:none;border-radius:0;border-top:0;border-right:1px solid var(--bd);transform:none!important;visibility:visible!important;box-shadow:none;overflow:auto}
+  .dwr .it.on::before{display:none}
+  .dwr .dclose{display:none}
+  main{max-width:none;margin:0 0 0 270px;padding:24px 44px 48px}
+  .tabs{display:none}
+  .tbar{position:static}
+  main>section{grid-template-columns:repeat(auto-fit,minmax(400px,1fr))}
+  main>section>.adv,main>section>.mwrap{grid-column:1/-1;max-width:none}
+  #v-game{max-width:560px;margin:0}
+  .toast{bottom:28px}
+}
 </style>
 </head>
 <body>
@@ -667,6 +701,7 @@ html.swp,html.swp body{overflow-x:hidden}
       <div class="frm" id="hdate">Holy Cross · Arches Bar</div>
     </div>
   </div>
+  <div class="mepic" id="mepic" hidden><img id="mepimg" alt="My photo"></div>
   <div class="hshift">
     <div class="hs1"><span class="hl">Today</span><b id="hstoday">—</b></div>
     <div class="hs2"><span class="hl">Next shift</span><span id="hsnext">—</span></div>
@@ -681,12 +716,14 @@ html.swp,html.swp body{overflow-x:hidden}
 
 <div class="card clk" id="clk"></div>
 
+<div class="card" id="qncard"></div>
 <div class="card" id="withme" style="display:none"></div>
 <div class="card" id="payday"></div>
 <div class="card" id="engcard"></div>
 <div class="card" id="visa">
   <h2>Hours this week</h2>
   <div class="vst"><div><b id="vhc">0h 00m</b><small>Holy Cross (tracked)</small></div><div><b id="var">0h 00m</b><small>Arches (estimate)</small></div><div><b id="vtot">0h 00m</b><small>Total this week</small></div></div>
+  <p class="mnote" style="margin:0 0 8px">Holy Cross: if you work more than 6 hours in a day, 30 minutes break is taken off (not paid).</p>
   <label for="varch">Hours for each Arches shift (estimate). 2:30pm to 12am = 9.5 hours</label><input id="varch" type="number" inputmode="decimal" min="0" max="16" step="0.5">
 </div>
 <div class="card" id="bionudge" hidden>
@@ -1068,6 +1105,22 @@ html.swp,html.swp body{overflow-x:hidden}
 <div class="chips2" id="ent"></div>
 <div class="card" id="enb"></div>
 </section>
+<section id="v-plan" style="display:none">
+<h1 class="pg">Today</h1>
+<div id="planb" style="grid-column:1/-1"></div>
+</section>
+<section id="v-fit" style="display:none">
+<h1 class="pg">Daily Workout Tracker</h1>
+<div id="fitb" style="display:contents"></div>
+</section>
+<section id="v-note" style="display:none">
+<h1 class="pg">Notes</h1>
+<div id="noteb" style="display:contents"></div>
+</section>
+<section id="v-car" style="display:none">
+<h1 class="pg">Career</h1>
+<div id="carb" style="display:contents"></div>
+</section>
 <nav class="tabs" id="tabs" aria-label="Pages">
   <button data-v="dash" class="on"><i>🏠</i><span>Home</span></button>
   <button data-v="goals"><i>🎯</i><span>Goals</span></button>
@@ -1101,13 +1154,17 @@ html.swp,html.swp body{overflow-x:hidden}
     <button class="it" data-go="goals" title="Goals" data-k="today targets tasks todo checklist streak"><i>🎯</i><span class="lb">Goals</span><em class="bg" id="bg-goals"></em></button>
     <button class="it" data-go="roster" title="Roster" data-k="shifts rota week"><i>📅</i><span class="lb">Roster</span><em class="bg" id="bg-roster"></em></button>
     <button class="it" data-go="book" title="Bookings" data-k="tables guests reservation"><i>📖</i><span class="lb">Bookings</span><em class="bg" id="bg-book"></em></button>
+    <button class="it" data-go="plan" title="Today" data-k="today plan day agenda"><i>🗓</i><span class="lb">Today</span></button>
+    <button class="it" data-go="note" title="Notes" data-k="note reminder voice memo"><i>🗒</i><span class="lb">Notes</span></button>
     <div class="dl">Money</div>
     <button class="it" data-go="pay" title="Pay" data-k="payslip tax wage salary"><i>💶</i><span class="lb">Pay</span></button>
     <button class="it" data-go="money" title="Money" data-k="loans savings interest"><i>💰</i><span class="lb">Money</span></button>
     <div class="dl">Health</div>
     <button class="it" data-go="walk" title="Walk" data-k="steps km distance gps walking"><i>🚶</i><span class="lb">Walk</span></button>
+    <button class="it" data-go="fit" title="Workout" data-k="squats pushups plank gym exercise"><i>🏋</i><span class="lb">Workout</span></button>
     <div class="dl">Fun</div>
     <button class="it" data-go="game" title="Games" data-k="snake play"><i>🎮</i><span class="lb">Games</span></button>
+    <button class="it" data-go="car" title="Career" data-k="skills sql power bi web projects portfolio"><i>🚀</i><span class="lb">Career</span></button>
     <button class="it" data-go="eng" title="English" data-k="english learn words slang irish phrases quiz"><i>🗣</i><span class="lb">English</span></button>
     <div class="dnone" id="mnone" hidden>Nothing found</div>
     <div class="dfoot">Keys: 1–8 jump · / or Ctrl+K search</div>
@@ -1140,7 +1197,7 @@ function parse(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2])}
 function monday(d){var x=new Date(d.getFullYear(),d.getMonth(),d.getDate());var w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return x}
 function fmt(m){var h=Math.floor(m/60),mm=Math.round(m%60);return h+"h "+pad(mm)+"m"}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(shifts))}catch(e){}}
-function mins(s){var a=s.st.split(":"),b=s.en.split(":");var x=+a[0]*60+ +a[1],y=+b[0]*60+ +b[1];if(y<x)y+=1440;return Math.max(0,y-x-(+s.brk||0))}
+function mins(s){var a=s.st.split(":"),b=s.en.split(":");var x=+a[0]*60+ +a[1],y=+b[0]*60+ +b[1];if(y<x)y+=1440;var sp=y-x,br=+s.brk||0;if(sp>360&&br<30)br=30;return Math.max(0,sp-br)}
 
 var credits="";
 try{credits=localStorage.getItem("hours_cred_v1")||""}catch(e){credits=""}
@@ -1875,6 +1932,10 @@ var CMDS=[
   {i:"🏦",t:"Open loans I took",k:"borrowed taken bank debt",run:function(){goTab("money");MS.tab="taken";renderMoney()}},
   {i:"🐷",t:"Open savings",k:"saving pot money",run:function(){goTab("money");MS.tab="save";renderMoney()}},
   {i:"🚶",t:"Open walk tracker",k:"steps km distance gps walking health",run:function(){goTab("walk")}},
+  {i:"🗓",t:"Open Today (daily plan)",k:"plan day agenda",run:function(){goTab("plan")}},
+  {i:"🗒",t:"Open Notes",k:"note reminder voice",run:function(){goTab("note")}},
+  {i:"🏋",t:"Open Workout",k:"squats pushups plank exercise",run:function(){goTab("fit")}},
+  {i:"🚀",t:"Open Career",k:"skills projects portfolio sql",run:function(){goTab("car")}},
   {i:"🗣",t:"Open English",k:"learn words slang irish phrases quiz speak",run:function(){goTab("eng")}},
   {i:"🎮",t:"Open games",k:"play snake fun",run:function(){goTab("game")}},
   {i:"🍽",t:"Open Service Hub",k:"floor plan allergens tip split food cost tonight",run:function(){openLink(hubUrl())}},
@@ -2862,7 +2923,7 @@ tabsEl.addEventListener("click",function(e){
     if($("dwr").classList.contains("open")||!$("cmd").hidden)return true;
     var sh=$("sheet");if(sh&&sh.classList.contains("open"))return true;
     var g=$("v-game");if(g&&g.style.display!=="none")return true;
-    var en=$("v-eng");if(en&&en.style.display!=="none")return true;
+    if(window.XPG&&Object.keys(XPG).some(function(k){var e=$("v-"+k);return e&&e.style.display!=="none"}))return true;
     try{if(String(window.getSelection())!=="")return true}catch(e){}
     return false;
   }
@@ -3208,20 +3269,264 @@ $("v-eng").addEventListener("click",function(e){
   eRender();
 });
 document.addEventListener("click",function(e){if(e.target&&e.target.id==="engopen")goTab("eng")});
+eDash();
+
+
+/* ---- v51: workout, notes, plan, career, money totals, shortcuts, photo hero ---- */
+var XPG={eng:function(){eSes=null;eRender()},plan:function(){planRender()},fit:function(){fitRender()},note:function(){noteRender()},car:function(){carRender()}};
 (function(){
-  var _g=goTab;
+  var _g=goTab,ALL=["dash","goals","roster","book","pay","money","walk","game"];
   goTab=function(v){
-    if(v==="eng"){
-      ["dash","goals","roster","book","pay","money","walk","game"].forEach(function(n){$("v-"+n).style.display="none"});
-      $("v-eng").style.display="";if(window.snakeStop)snakeStop();
+    if(XPG[v]){
+      ALL.forEach(function(n){$("v-"+n).style.display="none"});
+      Object.keys(XPG).forEach(function(k){$("v-"+k).style.display=(k===v)?"":"none"});
+      if(window.snakeStop)snakeStop();
       menuMark(v);closeMenu();
       Array.prototype.forEach.call(tabsEl.querySelectorAll("button"),function(b){b.className=""});
-      window.scrollTo(0,0);eSes=null;eRender();return;
+      window.scrollTo(0,0);XPG[v]();return;
     }
-    $("v-eng").style.display="none";_g(v);
+    Object.keys(XPG).forEach(function(k){$("v-"+k).style.display="none"});
+    _g(v);
   };
 })();
-eDash();
+TT.plan="Today";TT.fit="Workout";TT.note="Notes";TT.car="Career";
+function pgo(v){goTab(v)}
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-pgo]");if(b)goTab(b.getAttribute("data-pgo"))});
+
+/* ---- workout ---- */
+var FK="hc_fit_v1",FT={d:{},run:0},fTick=null;
+try{var _f=JSON.parse(localStorage.getItem(FK)||"null");if(_f&&_f.d){FT=_f;if(!FT.run)FT.run=0}}catch(e){}
+function fSave(){try{localStorage.setItem(FK,JSON.stringify(FT))}catch(e){}}
+function fDay(d){d=d||eDay();if(!FT.d[d])FT.d[d]={sq:[],pu:[],pl:[]};return FT.d[d]}
+function fPeek(d){return FT.d[d||eDay()]||{sq:[],pu:[],pl:[]}}
+function fSum(a){return a.reduce(function(t,x){return t+x},0)}
+function fClock(s){return pad(Math.floor(s/60))+":"+pad(s%60)}
+function fEl(){return FT.run?Math.max(0,Math.floor((Date.now()-FT.run)/1000)):0}
+function fSets(a){return a.length?a.join(" + ")+" = "+fSum(a):"No sets yet"}
+function fCard(k,title,icon,id){
+  var a=fPeek()[k];
+  return '<div class="card"><h2>'+icon+' '+title+'</h2><div class="mnote" style="margin:0 0 8px">Today: <b>'+fSum(a)+'</b> reps · '+esc(fSets(a))+'</div><div class="fitrow"><input id="'+id+'" type="number" inputmode="numeric" min="1" max="1000" placeholder="Reps"><button class="add" style="margin-top:0;width:auto;padding:12px 22px" data-f="add" data-k="'+k+'" data-i="'+id+'">Save</button></div>'+(a.length?'<button class="ensp" style="margin-top:10px" data-f="undo" data-k="'+k+'">Remove last set</button>':"")+'</div>';
+}
+function fitRender(){
+  var t=fPeek(),run=!!FT.run,h='';
+  h+=fCard("sq","Squats","🦵","fsq")+fCard("pu","Push-ups","💪","fpu");
+  h+='<div class="card"><h2>⏱ Plank</h2><div class="fitbig" id="fpt">'+fClock(fEl())+'</div><div class="mnote" style="margin:0 0 8px;text-align:center">'+(run?"Counting... hold on!":"Press Start, then Stop and save when you finish.")+'</div><div class="btns"><button class="add" data-f="plstart"'+(run?" disabled":"")+'>Start</button><button class="add" data-f="plstop"'+(run?"":" disabled")+'>Stop and save</button><button class="add ghost" data-f="plreset">Reset</button></div><div class="mnote" style="margin:10px 0 0">Today: '+(t.pl.length?t.pl.map(function(x){return fClock(x)}).join(" · ")+" (total "+fClock(fSum(t.pl))+", best "+fClock(Math.max.apply(null,t.pl))+")":"no plank yet")+'</div>'+(t.pl.length?'<button class="ensp" style="margin-top:10px" data-f="undo" data-k="pl">Remove last plank</button>':"")+'</div>';
+  h+='<div class="card"><h2>Today\'s total</h2><div class="rd"><span>Squats</span><b>'+fSum(t.sq)+' reps</b></div><div class="rd"><span>Push-ups</span><b>'+fSum(t.pu)+' reps</b></div><div class="rd"><span>Plank</span><b>'+fClock(fSum(t.pl))+(t.pl.length>1?" (best "+fClock(Math.max.apply(null,t.pl))+")":"")+'</b></div><p class="mnote" style="margin:8px 0 0">A new day starts at midnight. Old days are kept in the history.</p></div>';
+  var days=Object.keys(FT.d).filter(function(d){var x=FT.d[d];return x.sq.length||x.pu.length||x.pl.length}).sort().reverse().slice(0,14);
+  h+='<div class="card"><h2>History</h2>';
+  if(!days.length)h+='<div class="empty">No days saved yet.</div>';
+  else{h+='<div class="tbw"><table class="mt"><tr><th>Day</th><th>Squats</th><th>Push-ups</th><th>Plank</th></tr>';
+    days.forEach(function(d){var x=FT.d[d];h+="<tr><td>"+parse(d).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"})+"</td><td>"+fSum(x.sq)+"</td><td>"+fSum(x.pu)+"</td><td>"+fClock(fSum(x.pl))+"</td></tr>"});
+    h+="</table></div>"}
+  h+='</div>';
+  $("fitb").innerHTML=h;
+  if(fTick){clearInterval(fTick);fTick=null}
+  if(run)fTick=setInterval(function(){var el=$("fpt");if(el)el.textContent=fClock(fEl())},250);
+}
+$("v-fit").addEventListener("click",function(e){
+  var b=e.target.closest("[data-f]");if(!b)return;
+  var a=b.getAttribute("data-f"),k=b.getAttribute("data-k");
+  if(a==="add"){
+    var v=parseInt($(b.getAttribute("data-i")).value,10);
+    if(!(v>=1&&v<=1000)){toast("Type the reps first");return}
+    fDay()[k].push(v);fSave();eMark();eSave();
+  }else if(a==="undo"){fDay()[k].pop();fSave()}
+  else if(a==="plstart"){FT.run=Date.now();fSave()}
+  else if(a==="plstop"){var s=fEl();if(s<1){toast("Too short");return}fDay().pl.push(s);FT.run=0;fSave();toast("Plank saved: "+fClock(s))}
+  else if(a==="plreset"){FT.run=0;fSave()}
+  fitRender();
+});
+
+/* ---- notes ---- */
+var NK="hc_notes_v1",NT=[],nRec=null,nArm="";
+try{NT=JSON.parse(localStorage.getItem(NK)||"[]")||[]}catch(e){NT=[]}
+function nSave(){try{localStorage.setItem(NK,JSON.stringify(NT))}catch(e){}}
+function nBox(p,h){return '<textarea class="tb" id="'+p+'ta" placeholder="Type a quick note or reminder..." style="min-height:'+h+'px;margin-top:0"></textarea><div class="btns"><button class="add" data-n="save" data-p="'+p+'">Save Note</button><button class="add ghost" id="'+p+'mic" data-n="mic" data-p="'+p+'">🎤 Record Voice Note</button></div><div class="nrec" id="'+p+'st" aria-live="polite"></div>'}
+function nList(){
+  if(!NT.length)return '<div class="empty">No notes yet.</div>';
+  return NT.map(function(n,i){
+    var d=new Date(n.t).toLocaleString("en-IE",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+    return '<div class="enm"><small style="color:var(--mu)">'+esc(d)+'</small><div style="white-space:pre-wrap;margin:4px 0 6px">'+esc(n.x)+'</div><button class="ensp" data-n="del" data-i="'+i+'">'+(nArm===String(i)?"Tap again":"Delete")+'</button></div>';
+  }).join("");
+}
+function noteRender(){
+  var keep=$("pnta")?$("pnta").value:"";
+  $("noteb").innerHTML='<div class="card">'+nBox("pn",130)+'</div><div class="card"><h2>My notes</h2>'+nList()+'</div>';
+  $("pnta").value=keep;
+  dashNote();
+}
+function dashNote(){
+  var el=$("qncard");if(!el)return;
+  var keep=$("qnta")?$("qnta").value:"";
+  el.innerHTML='<h2>Quick note <span style="font-weight:400;color:var(--mu);font-size:13px">'+NT.length+' saved</span></h2>'+nBox("qn",76)+'<button class="ensp" style="margin-top:10px" data-pgo="note">See all notes</button>';
+  $("qnta").value=keep;
+}
+function nMic(p){
+  var ta=$(p+"ta"),st=$(p+"st"),btn=$(p+"mic"),SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){st.className="nrec";st.textContent="Voice typing does not work in this browser. Try Chrome on Android or Safari on iPhone. You can still type your note.";return}
+  if(nRec){try{nRec.stop()}catch(e){}return}
+  var r=new SR(),base=ta.value.trim();
+  r.lang="en-IE";r.interimResults=true;r.continuous=true;
+  r.onstart=function(){st.className="nrec on";st.textContent="● Recording... speak now. Tap again to stop.";btn.textContent="■ Stop recording"};
+  r.onresult=function(e){var t="";for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;ta.value=(base?base+" ":"")+t.trim()};
+  r.onerror=function(e){st.className="nrec";st.textContent=(e.error==="not-allowed"||e.error==="service-not-allowed")?"The microphone is blocked. Allow the microphone for this site in your browser settings.":(e.error==="no-speech"?"I did not hear anything. Try again.":"Voice typing stopped ("+e.error+").")};
+  r.onend=function(){nRec=null;btn.textContent="🎤 Record Voice Note";if(st.className==="nrec on"){st.className="nrec";st.textContent="Done. Check the text, then tap Save Note."}};
+  nRec=r;try{r.start()}catch(e){nRec=null}
+}
+document.addEventListener("click",function(e){
+  var b=e.target.closest&&e.target.closest("[data-n]");if(!b)return;
+  var a=b.getAttribute("data-n"),p=b.getAttribute("data-p");
+  if(a==="mic"){nMic(p);return}
+  if(a==="save"){
+    var ta=$(p+"ta"),x=ta.value.trim();if(!x){toast("Type a note first");return}
+    if(nRec){try{nRec.stop()}catch(err){}}
+    NT.unshift({id:Date.now(),t:new Date().toISOString(),x:x});nSave();ta.value="";toast("Note saved");
+    if($("v-note").style.display!=="none")noteRender();dashNote();return;
+  }
+  if(a==="del"){
+    var i=b.getAttribute("data-i");
+    if(nArm===i){NT.splice(+i,1);nSave();nArm=""}
+    else{nArm=i;setTimeout(function(){if(nArm===i){nArm="";if($("v-note").style.display!=="none")noteRender()}},3000)}
+    noteRender();
+  }
+});
+dashNote();
+
+/* ---- daily plan ---- */
+function planRow(ic,t,s,go){return '<button class="plr" data-pgo="'+go+'"><i>'+ic+'</i><span><b>'+esc(t)+'</b><small>'+esc(s)+'</small></span><em>›</em></button>'}
+function planRender(){
+  var ti=eDay(),h="",td=roster.filter(function(r){return r.date===ti}).sort(function(a,b){return a.st<b.st?-1:1});
+  var hc=0;shifts.forEach(function(s){if(s.date===ti)hc+=mins(s)});
+  h+=planRow("📅","Shifts today",td.length?td.map(shiftText).join(", ")+(hc?" · worked "+fmt(hc):""):"Day off"+(hc?" · worked "+fmt(hc):""),"roster");
+  var bk=bookings.filter(function(b){return b.date===ti}).sort(function(a,b){return a.time<b.time?-1:1});
+  h+=planRow("📖","Bookings",bk.length?bk.length+" today: "+bk.slice(0,3).map(function(b){return b.time+" "+b.name}).join(", ")+(bk.length>3?"...":""):"No bookings today","book");
+  if(dayNotes[ti])h+=planRow("📝","Note for today",String(dayNotes[ti]).split("\n").slice(0,2).join(" · "),"book");
+  var f=fPeek();
+  h+=planRow("🏋","Workout",(f.sq.length||f.pu.length||f.pl.length)?"Squats "+fSum(f.sq)+" · Push-ups "+fSum(f.pu)+" · Plank "+fClock(fSum(f.pl)):"Not started yet","fit");
+  var wm=0;walks.forEach(function(w){if(w.date===ti)wm+=w.m});
+  h+=planRow("🚶","Walk",wm?wKm(wm)+" km · "+wSteps(wm).toLocaleString()+" steps":"No walk yet","walk");
+  var due=0;Object.keys(E.box).forEach(function(k){if(E.box[k].d<=ti)due++});
+  var done=(E.td.d===ti)?E.td.done:0;
+  h+=planRow("🗣","English",done+" cards done · "+due+" to review · 3 new each day","eng");
+  h+=planRow("🗒","Latest notes",NT.length?NT.slice(0,2).map(function(n){return n.x.slice(0,40)}).join(" · "):"No notes yet","note");
+  var t=new Date();t=new Date(t.getFullYear(),t.getMonth(),t.getDate());var dd=(3-t.getDay()+7)%7;
+  h+=planRow("💶","Pay day",dd===0?"Today is pay day (Wednesday)":"Wednesday, in "+dd+" day"+(dd===1?"":"s"),"pay");
+  $("planb").innerHTML='<div class="card" style="padding:6px 10px">'+h+'</div>';
+}
+
+/* ---- career: skills and projects ---- */
+var CK="hc_skills_v1",PK="hc_proj_v1",CS=null,PJ=[],cTab="skills",cArm="";
+var CDEF=[["SQL",["SELECT and WHERE","ORDER BY and LIMIT","JOINs","GROUP BY and HAVING","Subqueries","Window functions"]],["Power BI",["Import data","Clean data in Power Query","Make relationships","DAX measures","Build visuals","Publish a report"]],["HTML and CSS",["HTML basics","CSS box model","Flexbox","Grid","Responsive design"]],["JavaScript",["Variables and functions","Arrays and objects","DOM and events","fetch and APIs","localStorage"]]];
+function cid(){return Date.now()+"-"+Math.floor(Math.random()*100000)}
+try{CS=JSON.parse(localStorage.getItem(CK)||"null")}catch(e){CS=null}
+if(!Array.isArray(CS))CS=CDEF.map(function(s){return{id:cid(),n:s[0],l:s[1].map(function(t){return{t:t,d:0}})}});
+try{PJ=JSON.parse(localStorage.getItem(PK)||"[]")||[]}catch(e){PJ=[]}
+function cSave(){try{localStorage.setItem(CK,JSON.stringify(CS));localStorage.setItem(PK,JSON.stringify(PJ))}catch(e){}}
+function carRender(){
+  var h='<div class="chips2">'+[["skills","Skills"],["proj","Project log"]].map(function(x){return '<button class="'+(cTab===x[0]?"on":"")+'" data-c="tab" data-v="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>';
+  if(cTab==="skills"){
+    CS.forEach(function(s,si){
+      var d=s.l.filter(function(l){return l.d}).length,pct=s.l.length?Math.round(d/s.l.length*100):0;
+      h+='<div class="card"><div class="enx"><h2 style="margin:0">'+esc(s.n)+'</h2><span style="margin-left:auto;font-weight:700">'+d+'/'+s.l.length+'</span></div><div class="enxp"><i style="width:'+pct+'%"></i></div>';
+      s.l.forEach(function(l,li){h+='<button class="eno'+(l.d?" ok":"")+'" data-c="les" data-s="'+si+'" data-l="'+li+'">'+(l.d?"✅ ":"⬜ ")+esc(l.t)+'</button>'});
+      h+='<div class="fitrow" style="margin-top:10px"><input id="cl'+si+'" type="text" maxlength="60" placeholder="Add a lesson"><button class="add" style="margin-top:0;width:auto;padding:12px 18px" data-c="lsadd" data-s="'+si+'">Add</button></div><button class="ensp" style="margin-top:10px" data-c="skdel" data-s="'+si+'">'+(cArm==="s"+si?"Tap again":"Delete skill")+'</button></div>';
+    });
+    h+='<div class="card"><h2>Add a skill</h2><div class="fitrow"><input id="csn" type="text" maxlength="40" placeholder="Example: Python"><button class="add" style="margin-top:0;width:auto;padding:12px 18px" data-c="skadd">Add</button></div></div>';
+  }else{
+    h+='<div class="card"><h2>Add to my project log</h2><label for="pjd">Date</label><input id="pjd" type="date" value="'+eDay()+'"><label for="pjt">Project name</label><input id="pjt" type="text" maxlength="60"><label for="pjx">What I built or learned</label><textarea class="tb" id="pjx" style="min-height:90px" maxlength="400"></textarea><label for="pju">Link (optional)</label><input id="pju" type="url" placeholder="https://..."><button class="add" data-c="pjadd">Save</button></div>';
+    h+='<div class="card"><h2>My projects</h2>';
+    if(!PJ.length)h+='<div class="empty">No projects yet. Write what you build each week.</div>';
+    PJ.slice().sort(function(a,b){return a.d<b.d?1:-1}).forEach(function(p){
+      var i=PJ.indexOf(p);
+      h+='<div class="enm"><small style="color:var(--mu)">'+esc(p.d)+'</small><br><b>'+esc(p.t)+'</b><div style="white-space:pre-wrap;margin:4px 0 6px">'+esc(p.x)+'</div>'+(p.u?'<a href="'+esc(p.u)+'" target="_blank" rel="noopener">'+esc(p.u)+'</a><br>':"")+'<button class="ensp" style="margin-top:6px" data-c="pjdel" data-i="'+i+'">'+(cArm==="p"+i?"Tap again":"Delete")+'</button></div>';
+    });
+    h+=(PJ.length?'<button class="add ghost" data-c="pjpdf">Download my project log (PDF)</button><div class="mnote" id="pjm" style="margin:8px 0 0"></div>':"")+'</div>';
+  }
+  $("carb").innerHTML=h;
+}
+$("v-car").addEventListener("click",function(e){
+  var b=e.target.closest("[data-c]");if(!b)return;
+  var a=b.getAttribute("data-c"),s=+b.getAttribute("data-s"),i=b.getAttribute("data-i");
+  if(a==="tab"){cTab=b.getAttribute("data-v")}
+  else if(a==="les"){var l=CS[s].l[+b.getAttribute("data-l")];l.d=l.d?0:1;if(l.d)eMark();cSave();eSave()}
+  else if(a==="lsadd"){var t=$("cl"+s).value.trim();if(!t){toast("Type the lesson first");return}CS[s].l.push({t:t,d:0});cSave()}
+  else if(a==="skadd"){var n=$("csn").value.trim();if(!n){toast("Type the skill name first");return}CS.push({id:cid(),n:n,l:[]});cSave()}
+  else if(a==="skdel"){if(cArm==="s"+s){CS.splice(s,1);cSave();cArm=""}else{cArm="s"+s;setTimeout(function(){if(cArm==="s"+s){cArm="";carRender()}},3000)}}
+  else if(a==="pjadd"){var pt=$("pjt").value.trim();if(!pt){toast("Type the project name first");return}PJ.push({id:cid(),d:$("pjd").value||eDay(),t:pt,x:$("pjx").value.trim(),u:$("pju").value.trim()});cSave();toast("Saved")}
+  else if(a==="pjdel"){if(cArm==="p"+i){PJ.splice(+i,1);cSave();cArm=""}else{cArm="p"+i;setTimeout(function(){if(cArm==="p"+i){cArm="";carRender()}},3000)}}
+  else if(a==="pjpdf"){
+    var rows=PJ.slice().sort(function(a,b){return a.d<b.d?1:-1}).map(function(p){return [p.d,p.t,p.x+(p.u?"\n"+p.u:"")]});
+    try{shSave(shBuild({title:"My project log",sub:"What I built and learned",size:10.5,cols:[{h:"Date",x:40,w:75},{h:"Project",x:125,w:140},{h:"What I built and learned",x:275,w:280}],rows:rows}),"project-log.pdf",$("pjm"))}catch(err){$("pjm").textContent="Could not make the PDF: "+err.message}
+    return;
+  }
+  carRender();
+});
+
+/* ---- 6 hour break rule: money totals ---- */
+function mTotals(){
+  var h=$("mHero");if(!h)return;
+  if(!$("mTot"))h.insertAdjacentHTML("afterend",'<div class="mcard" id="mTot"></div>');
+  var el=$("mTot"),r=fxRate();
+  function sums(c){return{g:mTot(loans.given,c,tf),t:mTot(loans.taken,c,tf),s:mTot(loans.save,c,function(x){return parseFloat(x.amt)||0})}}
+  var e=sums("EUR"),n=sums("INR"),o='<h2>All my money together</h2>';
+  function row(l,a,b){return '<div class="rd"><span>'+l+'</span><b>'+a+'</b><b style="margin-left:14px">'+b+'</b></div>'}
+  o+='<div class="mnote" style="margin:0 0 6px"><b>Separate</b>: euro and rupees</div>';
+  o+='<div class="rd"><span></span><small style="color:var(--mu)">€ Euro</small><small style="color:var(--mu);margin-left:14px">₹ Rupees</small></div>';
+  o+=row("To get back",money(e.g,"EUR"),money(n.g,"INR"))+row("To pay back",money(e.t,"EUR"),money(n.t,"INR"))+row("Savings",money(e.s,"EUR"),money(n.s,"INR"));
+  var ne=e.s+e.g-e.t,ni=n.s+n.g-n.t;
+  o+=row('<b>Net</b>',(ne<0?"− ":"")+money(Math.abs(ne),"EUR"),(ni<0?"− ":"")+money(Math.abs(ni),"INR"));
+  if(!(r>0)){
+    o+='<p class="mnote" style="margin:12px 0 6px">To add euro and rupees together, I need the exchange rate. Type how many rupees are €1:</p><div class="fitrow"><input id="mxr" type="number" inputmode="decimal" placeholder="Example: 100"><button class="add" style="margin-top:0;width:auto;padding:12px 18px" data-mx="set">Save rate</button></div>';
+  }else{
+    var gI=e.g*r+n.g,tI=e.t*r+n.t,sI=e.s*r+n.s,nI=gI+sI-tI,gE=e.g+n.g/r,tE=e.t+n.t/r,sE=e.s+n.s/r,nE=gE+sE-tE;
+    o+='<p class="mnote" style="margin:14px 0 6px"><b>Everything in rupees</b> (euro changed to rupees)</p>';
+    o+='<div class="rd"><span>To get back</span><b class="gg">'+money(gI,"INR")+'</b></div><div class="rd"><span>To pay back</span><b class="rr">'+money(tI,"INR")+'</b></div><div class="rd"><span>Savings</span><b>'+money(sI,"INR")+'</b></div><div class="rd"><span class="w">Net</span><b class="'+(nI>=0?"gg":"rr")+'">'+(nI<0?"− ":"")+money(Math.abs(nI),"INR")+'</b></div>';
+    o+='<p class="mnote" style="margin:14px 0 6px"><b>Everything in euro</b> (rupees changed to euro)</p>';
+    o+='<div class="rd"><span>To get back</span><b class="gg">'+money(gE,"EUR")+'</b></div><div class="rd"><span>To pay back</span><b class="rr">'+money(tE,"EUR")+'</b></div><div class="rd"><span>Savings</span><b>'+money(sE,"EUR")+'</b></div><div class="rd"><span class="w">Net</span><b class="'+(nE>=0?"gg":"rr")+'">'+(nE<0?"− ":"")+money(Math.abs(nE),"EUR")+'</b></div>';
+    o+='<p class="mnote" style="margin:10px 0 0">Rate used: ₹'+r.toFixed(2)+' = €1'+(FX.rate?" (live rate)":" (your own rate)")+'. Rates change every day, so these totals are a guide.</p>';
+  }
+  el.innerHTML=o;
+}
+(function(){
+  var _rm=renderMoney;
+  renderMoney=function(){_rm();mTotals()};
+  document.addEventListener("click",function(e){
+    var b=e.target.closest&&e.target.closest("[data-mx]");if(!b)return;
+    var v=parseFloat($("mxr").value);if(!(v>0)){toast("Type the rate first");return}
+    try{localStorage.setItem(FXM,String(v))}catch(err){}
+    renderMoney();if(window.fxRender)fxRender();
+  });
+})();
+
+/* ---- shortcuts from the home screen icon ---- */
+var GOQ="";try{GOQ=new URLSearchParams(location.search).get("go")||""}catch(e){}
+function goQ(g){
+  if(g==="note"){goTab("note");setTimeout(function(){var t=$("pnta");if(t)t.focus()},200)}
+  else if(g==="walk")goTab("walk");
+  else if(g==="eng")goTab("eng");
+  else if(g==="plan")goTab("plan");
+  else if(g==="fit")goTab("fit");
+  else if(g==="clock"){goTab("dash");setTimeout(function(){var c=$("clk");if(c)c.scrollIntoView({block:"center",behavior:"smooth"})},250)}
+}
+(function(){
+  var _s=show;
+  show=function(ok){_s(ok);if(ok&&GOQ){var g=GOQ;GOQ="";setTimeout(function(){goQ(g)},60)}};
+})();
+
+/* ---- photo hero ---- */
+function mepSet(){var p=$("mepic");if(!p)return;p.hidden=!photo;if(photo)$("mepimg").src=photo}
+(function(){
+  var _sp=showPhoto;
+  showPhoto=function(){_sp();mepSet()};
+  var hero=$("hero");
+  hero.addEventListener("pointermove",function(e){
+    var im=$("mepimg");if(!im||!photo||e.pointerType==="touch")return;
+    var r=hero.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+    im.style.transform="translate("+(x*14).toFixed(1)+"px,"+(y*10).toFixed(1)+"px) scale(1.08)";
+  });
+  hero.addEventListener("pointerleave",function(){var im=$("mepimg");if(im)im.style.transform=""});
+  showPhoto();
+})();
 
 var HASH="ce43ef7ac0487be787746eebe94f8648e87cd92c64b4d2762ed1fbe1b42a6ceb", AUTH="hours_auth_v1";
 function sha(t){
@@ -3665,7 +3970,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v50 · 20 Oct 2026";
+var APPV="v51 · 22 Oct 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
