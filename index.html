@@ -720,6 +720,8 @@ html.swp,html.swp body{overflow-x:hidden}
 .sv-i b{font-size:16px}
 /* ---- v54: profile card ---- */
 .pcw{margin:0 0 14px;perspective:900px}
+.hero .hrow{display:none}
+.hero{padding-top:44px}
 .pc{position:relative;border-radius:24px;padding:3px;background:conic-gradient(from var(--pa,0deg),#ff2d95,#ffb800,#2de2e6,#7b2dff,#ff2d95);animation:pcspin 6s linear infinite;transition:transform .15s ease-out;transform-style:preserve-3d}
 @property --pa{syntax:"<angle>";inherits:false;initial-value:0deg}
 @keyframes pcspin{to{--pa:360deg}}
@@ -3666,15 +3668,16 @@ function mSave(c){
 /* ---- v54: profile card ---- */
 var PCW=["Bar Pro 🍺","Future Web Dev 💻","Code Learner 🚀","MSc Computing 🎓","Waterford Legend ☘️","Never Gives Up 💪"],pcI=0;
 function pcHrs(){var m=/(\d+)h (\d\d)m/.exec(($("vtot")||{}).textContent||"");return m?(+m[1])+(+m[2])/60:0}
+function esc2(t){return String(t).replace(/[&<>]/g,"")}
 function pcSrc(){var a=$("avimg");if(a&&a.getAttribute("src")&&a.style.display!=="none")return a.getAttribute("src");return BODY||""}
 var pcSig="";
 function pcRender(){
   var el=$("pcard");if(!el)return;
   var hrs=pcHrs(),lv=1+Math.floor(hrs/8),xp=(hrs%8)/8*100,src=pcSrc();
   var nt=typeof NT!=="undefined"&&NT.length?NT.length:0,pj=typeof PJ!=="undefined"&&PJ.length?PJ.length:0;
-  var sig=[Math.round(hrs*10),src.length,nt,pj].join("|");if(sig===pcSig)return;pcSig=sig;
+  var gr=(($("greet")||{}).textContent||"Welcome"),sig=[Math.round(hrs*10),src.length,nt,pj,gr].join("|");if(sig===pcSig)return;pcSig=sig;
   el.innerHTML='<div class="pc" id="pcc"><div class="pci"><div class="pctop"><div class="pcph"><span class="ring"></span><div class="ph" id="pcph">'+(src?'<img alt="Me" src="'+src+'">':"B")+'</div><em>💻</em><em>🍺</em><em>🚀</em></div>'+
-  '<div class="pcn"><small>PLAYER CARD</small><h2>BENARJI MANDALA</h2><div class="pcr" id="pcr">'+PCW[pcI]+'</div><div class="pcl">The Holy Cross · Waterford · Ireland</div></div></div>'+
+  '<div class="pcn"><small>'+esc2(gr)+' 👋</small><h2>BENARJI MANDALA</h2><div class="pcr" id="pcr">'+PCW[pcI]+'</div><div class="pcl">The Holy Cross · Waterford · Ireland</div></div></div>'+
   '<div class="pcx"><div><span>Level '+lv+'</span><span>'+Math.round(xp)+'% to level '+(lv+1)+'</span></div><i><b style="width:'+xp.toFixed(0)+'%"></b></i></div>'+
   '<div class="pcs"><div><b>'+hrs.toFixed(1)+'</b><small>Hours</small></div><div><b>'+lv+'</b><small>Level</small></div><div><b>'+nt+'</b><small>Notes</small></div><div><b>'+pj+'</b><small>Projects</small></div></div>'+
   '<div class="pcb2"><span>🎓 MSc</span><span>🍺 Bar</span><span>💻 Web</span><span>🗣 English</span><span>🇮🇳→🇮🇪</span></div></div></div>';
@@ -4147,7 +4150,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v54 · 23 Oct 2026";
+var APPV="v55 · 23 Oct 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
