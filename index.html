@@ -762,6 +762,24 @@ html.swp,html.swp body{overflow-x:hidden}
 .qfm button{display:flex;align-items:center;gap:10px;border:0;background:var(--card);color:var(--tx);border-radius:99px;padding:11px 18px 11px 14px;font-size:16px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.3);cursor:pointer;font-family:inherit}
 .qfm button i{font-style:normal;font-size:22px}
 @media (min-width:1000px){#qfab{bottom:24px}}
+
+/* ---- v58: notes ---- */
+.nbig{display:block;width:100%;margin-top:12px;padding:18px 14px;border:0;border-radius:18px;background:linear-gradient(135deg,#ff2d95,#ffb800);color:#fff;font-weight:800;font-size:21px;line-height:1.2;font-family:inherit;cursor:pointer;box-shadow:0 8px 20px rgba(255,45,149,.28)}
+.nbig.rec{background:#b42318;animation:nrp 1s ease-in-out infinite}
+.nlab{display:block;margin:14px 0 6px;font-size:14px;font-weight:700;color:var(--mu)}
+.nsel{width:100%;padding:12px;font-size:17px;border:1px solid var(--bd);border-radius:12px;background:var(--bg);color:var(--tx);font-family:inherit}
+.nch{display:flex;flex-wrap:wrap;gap:8px}
+.nch button{border:2px solid var(--bd);background:var(--card);color:var(--tx);border-radius:99px;padding:9px 14px;font-weight:700;font-size:15px;font-family:inherit;cursor:pointer}
+.nch button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+:root[data-theme="dark"] .nch button.on{color:#0b1220}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .nch button.on{color:#0b1220}}
+.nbd{display:inline-block;margin-left:6px;background:var(--bg);border:1px solid var(--bd);border-radius:99px;padding:2px 9px;font-size:12px;font-weight:700}
+.nbd.due{background:#b45309;border-color:#b45309;color:#fff}
+.nbd.dn{opacity:.6;text-decoration:line-through}
+.nbt{display:flex;flex-wrap:wrap;gap:6px}
+.enm.pin{border-left:5px solid #ffb800}
+.nlv{height:14px;border-radius:99px;background:var(--bd);overflow:hidden;margin:8px 0}
+.nlv i{display:block;height:100%;width:0;background:linear-gradient(90deg,#1a7f4b,#ffb800,#d9534f);transition:width .08s}
 </style>
 </head>
 <body>
@@ -3444,59 +3462,181 @@ $("v-fit").addEventListener("click",function(e){
 });
 
 /* ---- notes ---- */
-var NK="hc_notes_v1",NT=[],nRec=null,nArm="";
+var NK="hc_notes_v1",NT=[],nRec=null,nArm="",nQ="",nEd=null,NLK="hc_note_lang_v1",nLang="en-IE",NRM={pn:"0",qn:"0"};
 try{NT=JSON.parse(localStorage.getItem(NK)||"[]")||[]}catch(e){NT=[]}
+try{nLang=localStorage.getItem(NLK)||"en-IE"}catch(e){}
 function nSave(){try{localStorage.setItem(NK,JSON.stringify(NT))}catch(e){}}
-function nBox(p,h){return '<textarea class="tb" id="'+p+'ta" placeholder="Type a quick note or reminder..." style="min-height:'+h+'px;margin-top:0"></textarea><div class="btns"><button class="add" data-n="save" data-p="'+p+'">Save Note</button><button class="add ghost" id="'+p+'mic" data-n="mic" data-p="'+p+'">🎤 Record Voice Note</button></div><div class="nrec" id="'+p+'st" aria-live="polite"></div>'}
+var NLANG=[["en-IE","English (Ireland)"],["en-IN","English (India)"],["te-IN","తెలుగు Telugu"],["hi-IN","हिन्दी Hindi"]];
+var NCH=[["0","No reminder"],["1h","In 1 hour"],["6pm","Tonight 6pm"],["9am","Tomorrow 9am"]];
+function remTime(k){
+  var d=new Date();
+  if(k==="1h")return Date.now()+3600000;
+  if(k==="6pm"){d.setHours(18,0,0,0);if(d.getTime()<=Date.now())d.setDate(d.getDate()+1);return d.getTime()}
+  if(k==="9am"){d.setDate(d.getDate()+1);d.setHours(9,0,0,0);return d.getTime()}
+  return 0;
+}
+function nBox(p,h,full){
+  var o='<textarea class="tb" id="'+p+'ta" placeholder="Type your note here, or tap the big button and speak..." style="min-height:'+h+'px;margin-top:0"></textarea>';
+  o+='<button type="button" class="nbig" id="'+p+'mic" data-n="mic" data-p="'+p+'">🎤 Tap to speak</button>';
+  o+='<div class="nrec" id="'+p+'st" aria-live="polite"></div>';
+  if(full){
+    o+='<label class="nlab" for="pnlang">Language I speak</label><select id="pnlang" class="nsel">'+NLANG.map(function(l){return'<option value="'+l[0]+'"'+(l[0]===nLang?" selected":"")+'>'+l[1]+"</option>"}).join("")+'</select>';
+    o+='<div class="nlab">Remind me</div><div class="nch">'+NCH.map(function(c){return'<button type="button" class="'+(NRM[p]===c[0]?"on":"")+'" data-n="rem" data-p="'+p+'" data-k="'+c[0]+'">'+c[1]+"</button>"}).join("")+'</div>';
+  }
+  o+='<button type="button" class="add" style="margin-top:12px" data-n="save" data-p="'+p+'">Save note</button>';
+  if(full)o+='<button type="button" class="ensp" style="margin-top:10px" data-n="test">🔊 Test my microphone</button><div id="pntest"></div>';
+  return o;
+}
+function nDate(t){return new Date(t).toLocaleString("en-IE",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}
 function nList(){
-  if(!NT.length)return '<div class="empty">No notes yet.</div>';
-  return NT.map(function(n,i){
-    var d=new Date(n.t).toLocaleString("en-IE",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
-    return '<div class="enm"><small style="color:var(--mu)">'+esc(d)+'</small><div style="white-space:pre-wrap;margin:4px 0 6px">'+esc(n.x)+'</div><button class="ensp" data-n="del" data-i="'+i+'">'+(nArm===String(i)?"Tap again":"Delete")+'</button></div>';
+  if(!NT.length)return '<div class="empty">No notes yet. Tap the big button and speak.</div>';
+  var q=nQ.trim().toLowerCase();
+  var L=NT.map(function(n,i){return{n:n,i:i}}).filter(function(x){return !q||String(x.n.x).toLowerCase().indexOf(q)>=0});
+  L=L.filter(function(x){return x.n.pin}).concat(L.filter(function(x){return !x.n.pin}));
+  if(!L.length)return '<div class="empty">No note has "'+esc(nQ)+'".</div>';
+  return L.map(function(x){
+    var n=x.n,i=x.i,edit=(nEd===n.id);
+    var rb=n.rem?'<span class="nbd'+(n.rd?" dn":(n.rem<=Date.now()?" due":""))+'">⏰ '+esc(nDate(n.rem))+(n.rd?" · done":"")+"</span>":"";
+    var h='<div class="enm'+(n.pin?" pin":"")+'"><small style="color:var(--mu)">'+(n.pin?"⭐ ":"")+esc(nDate(n.t))+"</small> "+rb;
+    if(edit)h+='<textarea class="tb" id="ned" style="min-height:90px;margin:6px 0">'+esc(n.x)+'</textarea><div class="nbt"><button class="ensp" data-n="esave" data-i="'+i+'">Save</button><button class="ensp" data-n="ecancel">Cancel</button></div>';
+    else h+='<div style="white-space:pre-wrap;margin:4px 0 8px">'+esc(n.x)+'</div><div class="nbt"><button class="ensp" data-n="pin" data-i="'+i+'">'+(n.pin?"Unpin":"⭐ Pin")+'</button><button class="ensp" data-n="edit" data-i="'+i+'">✏️ Edit</button><button class="ensp" data-n="copy" data-i="'+i+'">📋 Copy</button>'+(n.rem&&!n.rd?'<button class="ensp" data-n="rdone" data-i="'+i+'">✓ Done</button>':"")+'<button class="ensp" data-n="del" data-i="'+i+'">'+(nArm===String(i)?"Tap again":"Delete")+"</button></div>";
+    return h+"</div>";
   }).join("");
 }
 function noteRender(){
   var keep=$("pnta")?$("pnta").value:"";
-  $("noteb").innerHTML='<div class="card">'+nBox("pn",130)+'</div><div class="card"><h2>My notes</h2>'+nList()+'</div>';
+  $("noteb").innerHTML='<div class="card">'+nBox("pn",130,true)+'</div><div class="card"><h2>My notes <span style="font-weight:400;color:var(--mu);font-size:13px">'+NT.length+' saved</span></h2><input id="nsq" type="search" class="nsel" placeholder="Search my notes" value="'+esc(nQ)+'" autocomplete="off"><div id="nlistw" style="margin-top:10px">'+nList()+'</div></div>';
   $("pnta").value=keep;
-  dashNote();
+  dashNote();remCheck();
 }
 function dashNote(){
   var el=$("qncard");if(!el)return;
   var keep=$("qnta")?$("qnta").value:"";
-  el.innerHTML='<h2>Quick note <span style="font-weight:400;color:var(--mu);font-size:13px">'+NT.length+' saved</span></h2>'+nBox("qn",76)+'<button class="ensp" style="margin-top:10px" data-pgo="note">See all notes</button>';
+  el.innerHTML='<h2>Quick note <span style="font-weight:400;color:var(--mu);font-size:13px">'+NT.length+' saved</span></h2>'+nBox("qn",76,false)+'<button class="ensp" style="margin-top:10px" data-pgo="note">See all notes</button>';
   $("qnta").value=keep;
 }
+/* voice typing: one short listen at a time, restarted after each pause.
+   This avoids the repeated words (Mahesh Mahesh Mahesh) that long listening causes on phones. */
 function nMic(p){
   var ta=$(p+"ta"),st=$(p+"st"),btn=$(p+"mic"),SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){st.className="nrec";st.textContent="Voice typing does not work in this browser. Try Chrome on Android or Safari on iPhone. You can still type your note.";return}
-  if(nRec){try{nRec.stop()}catch(e){}return}
-  var r=new SR(),base=ta.value.trim();
-  r.lang="en-IE";r.interimResults=true;r.continuous=true;
-  r.onstart=function(){st.className="nrec on";st.textContent="● Recording... speak now. Tap again to stop.";btn.textContent="■ Stop recording"};
-  r.onresult=function(e){var t="";for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;ta.value=(base?base+" ":"")+t.trim()};
-  r.onerror=function(e){st.className="nrec";st.textContent=(e.error==="not-allowed"||e.error==="service-not-allowed")?"The microphone is blocked. Allow the microphone for this site in your browser settings.":(e.error==="no-speech"?"I did not hear anything. Try again.":"Voice typing stopped ("+e.error+").")};
-  r.onend=function(){nRec=null;btn.textContent="🎤 Record Voice Note";if(st.className==="nrec on"){st.className="nrec";st.textContent="Done. Check the text, then tap Save Note."}};
-  nRec=r;try{r.start()}catch(e){nRec=null}
+  if(!SR){st.className="nrec";st.textContent="Voice typing does not work in this browser. Use Chrome on Android or Safari on iPhone. You can still type.";return}
+  if(nRec){nRec.stopped=true;try{nRec.r.stop()}catch(e){}return}
+  var S={stopped:false,base:ta.value.trim(),done:"",tries:0,got:false,lastF:"",lastT:0,r:null};
+  nRec=S;
+  function show(interim){var t=(S.done+(interim?" "+interim:"")).trim();ta.value=(S.base&&t?S.base+" ":S.base)+t}
+  function reset(){nRec=null;btn.classList.remove("rec");btn.textContent="🎤 Tap to speak"}
+  function go(){
+    var r=new SR();S.r=r;S.got=false;
+    r.lang=($("pnlang")&&$("pnlang").value)||nLang;r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
+    r.onstart=function(){btn.classList.add("rec");btn.textContent="■ Listening... tap to stop";st.className="nrec on";st.textContent="● Speak now. Take a short pause between sentences."};
+    r.onresult=function(e){
+      var interim="";
+      for(var i=e.resultIndex;i<e.results.length;i++){
+        var res=e.results[i],tx=String(res[0].transcript||"").trim();
+        if(!tx)continue;
+        if(res.isFinal){
+          var now=Date.now();
+          if(tx===S.lastF&&now-S.lastT<2500)continue;
+          S.lastF=tx;S.lastT=now;S.got=true;S.done=(S.done+" "+tx).trim();
+        }else interim=(interim+" "+tx).trim();
+      }
+      show(interim);
+    };
+    r.onerror=function(e){
+      var c=e.error;
+      if(c==="not-allowed"||c==="service-not-allowed"){S.stopped=true;st.className="nrec";st.textContent="The microphone is blocked. Allow the microphone for this site in your browser settings."}
+      else if(c==="audio-capture"){S.stopped=true;st.className="nrec";st.textContent="I cannot find a microphone."}
+      else if(c==="network"){S.stopped=true;st.className="nrec";st.textContent="Voice typing needs the internet. Check your connection."}
+    };
+    r.onend=function(){
+      if(S.got)S.tries=0;else S.tries++;
+      if(!S.stopped&&nRec===S&&S.tries<3){setTimeout(function(){if(!S.stopped&&nRec===S){try{go()}catch(e){reset()}}},250);return}
+      var msg=st.textContent,bad=/blocked|cannot find|needs the internet/.test(msg);
+      show("");reset();
+      if(!bad){st.className="nrec";st.textContent=S.done?"Done. Check the words, then tap Save note.":"I did not hear anything. Try again, closer to the microphone."}
+    };
+    try{r.start()}catch(e){reset()}
+  }
+  go();
 }
+function nTest(){
+  var out=$("pntest");if(!out)return;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){out.innerHTML='<p class="mnote">This browser cannot test the microphone.</p>';return}
+  out.innerHTML='<p class="mnote">Say something, like "Hello Mahesh". I listen for 6 seconds.</p><div class="nlv"><i id="pnlv"></i></div><p class="mnote" id="pntr"></p>';
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){
+    var AC=window.AudioContext||window.webkitAudioContext,ac=new AC(),src=ac.createMediaStreamSource(s),an=ac.createAnalyser();
+    an.fftSize=512;src.connect(an);
+    var buf=new Uint8Array(an.fftSize),t0=Date.now(),peak=0;
+    (function loop(){
+      an.getByteTimeDomainData(buf);
+      var m=0;for(var i=0;i<buf.length;i++)m=Math.max(m,Math.abs(buf[i]-128));
+      var lv=Math.min(100,m/128*260);if(lv>peak)peak=lv;
+      var bar=$("pnlv");if(bar)bar.style.width=lv+"%";
+      if(Date.now()-t0<6000){requestAnimationFrame(loop);return}
+      s.getTracks().forEach(function(t){t.stop()});try{ac.close()}catch(e){}
+      var r=$("pntr");if(r)r.textContent=peak>12?"✅ Your microphone works. I heard you.":"❌ I heard nothing. Check the microphone is allowed, turn the volume up, or move closer. Earphones with a microphone can help.";
+    })();
+  }).catch(function(){out.innerHTML='<p class="mnote">❌ The microphone is blocked. Allow the microphone for this site in your browser settings, then try again.</p>'});
+}
+/* reminders */
+(function(){
+  var d=$("remind");if(d&&!$("nrem"))d.insertAdjacentHTML("beforebegin",'<div class="today on" id="nrem" style="display:none;background:#b45309;cursor:pointer"></div>');
+})();
+function remCheck(){
+  var b=$("nrem");if(!b)return;
+  var now=Date.now(),due=NT.filter(function(n){return n.rem&&!n.rd&&n.rem<=now}),ch=false;
+  due.forEach(function(n){if(!n.rn){n.rn=1;ch=true;try{notify("Reminder",String(n.x).slice(0,80))}catch(e){}}});
+  if(ch)nSave();
+  if(due.length){b.style.display="block";b.textContent="⏰ Reminder: "+String(due[0].x).slice(0,80)+(due.length>1?" (+"+(due.length-1)+" more)":"")+" · tap to open"}
+  else b.style.display="none";
+}
+setInterval(remCheck,30000);
+document.addEventListener("click",function(e){
+  var b=e.target.closest&&e.target.closest("#nrem");
+  if(b){goTab("note")}
+});
+document.addEventListener("input",function(e){
+  if(e.target&&e.target.id==="nsq"){nQ=e.target.value;var w=$("nlistw");if(w)w.innerHTML=nList()}
+});
+document.addEventListener("change",function(e){
+  if(e.target&&e.target.id==="pnlang"){nLang=e.target.value;try{localStorage.setItem(NLK,nLang)}catch(err){}}
+});
+function nRefresh(){if($("v-note").style.display!=="none")noteRender();dashNote();remCheck()}
 document.addEventListener("click",function(e){
   var b=e.target.closest&&e.target.closest("[data-n]");if(!b)return;
-  var a=b.getAttribute("data-n"),p=b.getAttribute("data-p");
+  var a=b.getAttribute("data-n"),p=b.getAttribute("data-p"),i=b.getAttribute("data-i");
   if(a==="mic"){nMic(p);return}
+  if(a==="test"){nTest();return}
+  if(a==="rem"){
+    NRM[p]=b.getAttribute("data-k");
+    Array.prototype.forEach.call(b.parentNode.children,function(x){x.classList.toggle("on",x===b)});return;
+  }
   if(a==="save"){
-    var ta=$(p+"ta"),x=ta.value.trim();if(!x){toast("Type a note first");return}
-    if(nRec){try{nRec.stop()}catch(err){}}
-    NT.unshift({id:Date.now(),t:new Date().toISOString(),x:x});nSave();ta.value="";toast("Note saved");
-    if($("v-note").style.display!=="none")noteRender();dashNote();return;
+    var ta=$(p+"ta"),x=ta.value.trim();if(!x){toast("Type or speak a note first");return}
+    if(nRec){nRec.stopped=true;try{nRec.r.stop()}catch(err){}}
+    var rem=remTime(NRM[p]||"0"),o={id:Date.now(),t:new Date().toISOString(),x:x};
+    if(rem)o.rem=rem;
+    NT.unshift(o);nSave();ta.value="";NRM[p]="0";
+    toast(rem?"Saved. I will remind you at "+nDate(rem):"Note saved");
+    nRefresh();return;
+  }
+  if(a==="pin"){NT[+i].pin=!NT[+i].pin;nSave();nRefresh();return}
+  if(a==="edit"){nEd=NT[+i].id;noteRender();return}
+  if(a==="ecancel"){nEd=null;noteRender();return}
+  if(a==="esave"){var v=($("ned").value||"").trim();if(!v){toast("The note is empty");return}NT[+i].x=v;nEd=null;nSave();noteRender();toast("Changed");return}
+  if(a==="rdone"){NT[+i].rd=true;nSave();nRefresh();return}
+  if(a==="copy"){
+    var tx=NT[+i].x;
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(tx).then(function(){toast("Copied")}).catch(function(){toast("Could not copy")});
+    else toast("Could not copy");
+    return;
   }
   if(a==="del"){
-    var i=b.getAttribute("data-i");
-    if(nArm===i){NT.splice(+i,1);nSave();nArm=""}
-    else{nArm=i;setTimeout(function(){if(nArm===i){nArm="";if($("v-note").style.display!=="none")noteRender()}},3000)}
-    noteRender();
+    if(nArm===i){NT.splice(+i,1);nSave();nArm="";nRefresh()}
+    else{nArm=i;setTimeout(function(){if(nArm===i){nArm="";if($("v-note").style.display!=="none")noteRender()}},3000);noteRender()}
   }
 });
-dashNote();
+dashNote();remCheck();
 
 /* ---- daily plan ---- */
 function planRow(ic,t,s,go){return '<button class="plr" data-pgo="'+go+'"><i>'+ic+'</i><span><b>'+esc(t)+'</b><small>'+esc(s)+'</small></span><em>›</em></button>'}
@@ -4167,7 +4307,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v57 · 26 Oct 2026";
+var APPV="v58 · 26 Oct 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
