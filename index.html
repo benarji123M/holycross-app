@@ -780,6 +780,12 @@ html.swp,html.swp body{overflow-x:hidden}
 .enm.pin{border-left:5px solid #ffb800}
 .nlv{height:14px;border-radius:99px;background:var(--bd);overflow:hidden;margin:8px 0}
 .nlv i{display:block;height:100%;width:0;background:linear-gradient(90deg,#1a7f4b,#ffb800,#d9534f);transition:width .08s}
+
+/* ---- v59: voice memos ---- */
+.nbig.mrb{background:linear-gradient(135deg,#1f3a5f,#12687a)}
+.nbig.rec2{background:#b42318;max-width:340px}
+.mrbox{text-align:center}
+.mrt{font-size:48px;font-weight:800;font-variant-numeric:tabular-nums;color:#b42318;margin:6px 0}
 </style>
 </head>
 <body>
@@ -3466,6 +3472,23 @@ var NK="hc_notes_v1",NT=[],nRec=null,nArm="",nQ="",nEd=null,NLK="hc_note_lang_v1
 try{NT=JSON.parse(localStorage.getItem(NK)||"[]")||[]}catch(e){NT=[]}
 try{nLang=localStorage.getItem(NLK)||"en-IE"}catch(e){}
 function nSave(){try{localStorage.setItem(NK,JSON.stringify(NT))}catch(e){}}
+var nWL=null;
+function wlOn(){try{if(navigator.wakeLock&&navigator.wakeLock.request)navigator.wakeLock.request("screen").then(function(l){nWL=l}).catch(function(){})}catch(e){}}
+function wlOff(){try{if(nWL){nWL.release();nWL=null}}catch(e){}}
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&(nRec||(window.MR&&MR.rec)))wlOn()});
+function nDraftGet(p){try{return localStorage.getItem("hc_draft_"+p)||""}catch(e){return""}}
+function nDraftSet(p,v){try{if(v)localStorage.setItem("hc_draft_"+p,v);else localStorage.removeItem("hc_draft_"+p)}catch(e){}}
+function nFmt(tx,lang){
+  if(!/^en/i.test(lang||"en"))return tx;
+  tx=tx.replace(/\s*\b(full stop|period)\b/gi,".").replace(/\s*\bcomma\b/gi,",").replace(/\s*\bquestion mark\b/gi,"?").replace(/\s*\bexclamation (?:mark|point)\b/gi,"!").replace(/\s*\bnew paragraph\b\s*/gi,"\n\n").replace(/\s*\b(?:new line|next line)\b\s*/gi,"\n");
+  tx=tx.trim();if(!tx)return tx;
+  tx=tx.charAt(0).toUpperCase()+tx.slice(1);
+  tx=tx.replace(/([.?!])\s+([a-z])/g,function(m,a,b){return a+" "+b.toUpperCase()});
+  if(!/[.?!\n]$/.test(tx))tx+=".";
+  return tx;
+}
+function nJoin(a,b){if(!a)return b;if(!b)return a;return /\n$/.test(a)?a+b:a+" "+b}
+function nClock(ms){var s=Math.floor(ms/1000),m=Math.floor(s/60);return m+":"+("0"+(s%60)).slice(-2)}
 var NLANG=[["en-IE","English (Ireland)"],["en-IN","English (India)"],["te-IN","తెలుగు Telugu"],["hi-IN","हिन्दी Hindi"]];
 var NCH=[["0","No reminder"],["1h","In 1 hour"],["6pm","Tonight 6pm"],["9am","Tomorrow 9am"]];
 function remTime(k){
@@ -3505,15 +3528,15 @@ function nList(){
 }
 function noteRender(){
   var keep=$("pnta")?$("pnta").value:"";
-  $("noteb").innerHTML='<div class="card">'+nBox("pn",130,true)+'</div><div class="card"><h2>My notes <span style="font-weight:400;color:var(--mu);font-size:13px">'+NT.length+' saved</span></h2><input id="nsq" type="search" class="nsel" placeholder="Search my notes" value="'+esc(nQ)+'" autocomplete="off"><div id="nlistw" style="margin-top:10px">'+nList()+'</div></div>';
-  $("pnta").value=keep;
-  dashNote();remCheck();
+  $("noteb").innerHTML='<div class="card">'+nBox("pn",130,true)+'</div><div class="card" id="mmcard"></div><div class="card"><h2>My notes <span style="font-weight:400;color:var(--mu);font-size:13px">'+NT.length+' saved</span></h2><input id="nsq" type="search" class="nsel" placeholder="Search my notes" value="'+esc(nQ)+'" autocomplete="off"><div id="nlistw" style="margin-top:10px">'+nList()+'</div></div>';
+  $("pnta").value=keep||nDraftGet("pn");
+  dashNote();remCheck();mRender();
 }
 function dashNote(){
   var el=$("qncard");if(!el)return;
   var keep=$("qnta")?$("qnta").value:"";
   el.innerHTML='<h2>Quick note <span style="font-weight:400;color:var(--mu);font-size:13px">'+NT.length+' saved</span></h2>'+nBox("qn",76,false)+'<button class="ensp" style="margin-top:10px" data-pgo="note">See all notes</button>';
-  $("qnta").value=keep;
+  $("qnta").value=keep||nDraftGet("qn");
 }
 /* voice typing: one short listen at a time, restarted after each pause.
    This avoids the repeated words (Mahesh Mahesh Mahesh) that long listening causes on phones. */
@@ -3521,10 +3544,11 @@ function nMic(p){
   var ta=$(p+"ta"),st=$(p+"st"),btn=$(p+"mic"),SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){st.className="nrec";st.textContent="Voice typing does not work in this browser. Use Chrome on Android or Safari on iPhone. You can still type.";return}
   if(nRec){nRec.stopped=true;try{nRec.r.stop()}catch(e){}return}
-  var S={stopped:false,base:ta.value.trim(),done:"",tries:0,got:false,lastF:"",lastT:0,r:null};
-  nRec=S;
-  function show(interim){var t=(S.done+(interim?" "+interim:"")).trim();ta.value=(S.base&&t?S.base+" ":S.base)+t}
-  function reset(){nRec=null;btn.classList.remove("rec");btn.textContent="🎤 Tap to speak"}
+  var S={stopped:false,base:ta.value.trim(),done:"",tries:0,got:false,lastF:"",lastT:0,r:null,t0:Date.now(),tm:null};
+  nRec=S;wlOn();
+  S.tm=setInterval(function(){if(nRec!==S||st.className!=="nrec on")return;var w=ta.value.trim().split(/\s+/).filter(Boolean).length;st.textContent="● Listening "+nClock(Date.now()-S.t0)+" · "+w+" words. Take short pauses. Your words are saved as you speak."},500);
+  function show(interim){var t=nJoin(S.done,interim||"");ta.value=nJoin(S.base,t);nDraftSet(p,ta.value)}
+  function reset(){clearInterval(S.tm);wlOff();nRec=null;btn.classList.remove("rec");btn.textContent="🎤 Tap to speak"}
   function go(){
     var r=new SR();S.r=r;S.got=false;
     r.lang=($("pnlang")&&$("pnlang").value)||nLang;r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
@@ -3537,7 +3561,7 @@ function nMic(p){
         if(res.isFinal){
           var now=Date.now();
           if(tx===S.lastF&&now-S.lastT<2500)continue;
-          S.lastF=tx;S.lastT=now;S.got=true;S.done=(S.done+" "+tx).trim();
+          S.lastF=tx;S.lastT=now;S.got=true;S.done=nJoin(S.done,nFmt(tx,r.lang));
         }else interim=(interim+" "+tx).trim();
       }
       show(interim);
@@ -3550,7 +3574,7 @@ function nMic(p){
     };
     r.onend=function(){
       if(S.got)S.tries=0;else S.tries++;
-      if(!S.stopped&&nRec===S&&S.tries<3){setTimeout(function(){if(!S.stopped&&nRec===S){try{go()}catch(e){reset()}}},250);return}
+      if(!S.stopped&&nRec===S&&S.tries<4){setTimeout(function(){if(!S.stopped&&nRec===S){try{go()}catch(e){reset()}}},250);return}
       var msg=st.textContent,bad=/blocked|cannot find|needs the internet/.test(msg);
       show("");reset();
       if(!bad){st.className="nrec";st.textContent=S.done?"Done. Check the words, then tap Save note.":"I did not hear anything. Try again, closer to the microphone."}
@@ -3596,6 +3620,7 @@ document.addEventListener("click",function(e){
   if(b){goTab("note")}
 });
 document.addEventListener("input",function(e){
+  if(e.target&&(e.target.id==="pnta"||e.target.id==="qnta"))nDraftSet(e.target.id.slice(0,2),e.target.value);
   if(e.target&&e.target.id==="nsq"){nQ=e.target.value;var w=$("nlistw");if(w)w.innerHTML=nList()}
 });
 document.addEventListener("change",function(e){
@@ -3616,7 +3641,7 @@ document.addEventListener("click",function(e){
     if(nRec){nRec.stopped=true;try{nRec.r.stop()}catch(err){}}
     var rem=remTime(NRM[p]||"0"),o={id:Date.now(),t:new Date().toISOString(),x:x};
     if(rem)o.rem=rem;
-    NT.unshift(o);nSave();ta.value="";NRM[p]="0";
+    NT.unshift(o);nSave();ta.value="";nDraftSet(p,"");NRM[p]="0";
     toast(rem?"Saved. I will remind you at "+nDate(rem):"Note saved");
     nRefresh();return;
   }
@@ -3634,6 +3659,80 @@ document.addEventListener("click",function(e){
   if(a==="del"){
     if(nArm===i){NT.splice(+i,1);nSave();nArm="";nRefresh()}
     else{nArm=i;setTimeout(function(){if(nArm===i){nArm="";if($("v-note").style.display!=="none")noteRender()}},3000);noteRender()}
+  }
+});
+
+/* ---- audio memos: real audio, any length, saved on this phone ---- */
+var MR={rec:null,chunks:[],id:0,t:0,acc:0,seg:0,paused:false,tm:null,stream:null,ac:null,raf:0,mime:""},MDB=null,MURL=[],mArm="",mMsg="";
+function mdb(cb){
+  if(MDB){cb(MDB);return}
+  try{var q=indexedDB.open("hc_memos_v1",1);q.onupgradeneeded=function(){q.result.createObjectStore("m",{keyPath:"id"})};q.onsuccess=function(){MDB=q.result;cb(MDB)};q.onerror=function(){cb(null)}}catch(e){cb(null)}
+}
+function mPut(rec){mdb(function(d){if(!d)return;try{d.transaction("m","readwrite").objectStore("m").put(rec)}catch(e){}})}
+function mDelDb(id,cb){mdb(function(d){if(!d){cb();return}try{var t=d.transaction("m","readwrite");t.objectStore("m").delete(id);t.oncomplete=cb}catch(e){cb()}})}
+function mAll(cb){mdb(function(d){if(!d){cb([]);return}try{var r=d.transaction("m").objectStore("m").getAll();r.onsuccess=function(){cb((r.result||[]).sort(function(a,b){return b.id-a.id}))};r.onerror=function(){cb([])}}catch(e){cb([])}})}
+function mEl(){return MR.acc+(MR.paused||!MR.seg?0:Date.now()-MR.seg)}
+function mRender(){
+  var el=$("mmcard");if(!el)return;
+  MURL.forEach(function(u){try{URL.revokeObjectURL(u)}catch(e){}});MURL=[];
+  var h='<h2>Voice memos <span style="font-weight:400;color:var(--mu);font-size:13px">real audio, any length</span></h2>';
+  if(MR.rec){
+    h+='<div class="mrbox"><div class="mrt" id="mrt">'+nClock(mEl())+'</div><div class="nlv"><i id="mrlv"></i></div><div class="nbt" style="justify-content:center"><button type="button" class="nbig rec2" data-n="mrstop">■ Stop and save</button></div><div class="nbt" style="justify-content:center;margin-top:8px"><button type="button" class="ensp" data-n="mrpause">'+(MR.paused?"▶ Continue":"⏸ Pause")+'</button></div><p class="mnote" style="text-align:center">'+(MR.paused?"Paused.":"Recording. Keep this screen on.")+' The audio is saved every 10 seconds.</p></div>';
+    el.innerHTML=h;return;
+  }
+  h+='<button type="button" class="nbig mrb" data-n="mrrec">⏺ Record audio</button>'+(mMsg?'<p class="mnote" style="margin:8px 0 0">'+esc(mMsg)+"</p>":"")+'<p class="mnote" style="margin:8px 0 0">Records your real voice, so 5 to 10 minutes or more is fine. It does not turn it into words. Audio stays on this phone only and is not in the backup.</p><div id="mmlist" style="margin-top:10px"></div>';
+  el.innerHTML=h;
+  mAll(function(L){
+    var w=$("mmlist");if(!w)return;
+    if(!L.length){w.innerHTML="";return}
+    w.innerHTML=L.map(function(m){
+      var u=URL.createObjectURL(m.blob);MURL.push(u);
+      var ext=/mp4|aac/.test(m.mime||"")?"m4a":"webm";
+      return '<div class="enm"><small style="color:var(--mu)">'+esc(nDate(m.t))+" · "+nClock(m.dur||0)+(m.partial?" · recovered":"")+'</small><audio controls preload="metadata" src="'+u+'" style="width:100%;margin:8px 0"></audio><div class="nbt"><a class="ensp" style="text-decoration:none;display:inline-block" href="'+u+'" download="voice-memo-'+m.id+"."+ext+'">⬇ Download</a><button class="ensp" data-n="mrdel" data-i="'+m.id+'">'+(mArm===String(m.id)?"Tap again":"Delete")+"</button></div></div>";
+    }).join("");
+  });
+}
+function mrSave(final){
+  if(!MR.id)return;
+  mPut({id:MR.id,t:MR.t,dur:Math.round(mEl()/1000)*1000,mime:MR.mime,blob:new Blob(MR.chunks,{type:MR.mime||"audio/webm"}),partial:!final});
+}
+function mrStart(){
+  if(MR.rec)return;
+  if(!window.MediaRecorder||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){mMsg="This browser cannot record audio. Try Chrome on Android.";mRender();return}
+  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}}).then(function(s){
+    var mt=["audio/webm;codecs=opus","audio/webm","audio/mp4"].filter(function(t){try{return MediaRecorder.isTypeSupported(t)}catch(e){return false}})[0]||"";
+    var r;try{r=mt?new MediaRecorder(s,{mimeType:mt}):new MediaRecorder(s)}catch(e){s.getTracks().forEach(function(t){t.stop()});mMsg="Could not start the recorder.";mRender();return}
+    MR.stream=s;MR.rec=r;MR.chunks=[];MR.id=Date.now();MR.t=new Date().toISOString();MR.acc=0;MR.seg=Date.now();MR.paused=false;MR.mime=r.mimeType||mt;mMsg="";var n=0;
+    r.ondataavailable=function(e){if(e.data&&e.data.size){MR.chunks.push(e.data);n++;if(n%10===0)mrSave(false)}};
+    r.onstop=function(){
+      if(!MR.paused)MR.acc+=Date.now()-MR.seg;MR.paused=true;
+      mrSave(true);
+      clearInterval(MR.tm);cancelAnimationFrame(MR.raf);try{MR.ac&&MR.ac.close()}catch(e){}MR.ac=null;
+      MR.stream.getTracks().forEach(function(t){t.stop()});MR.rec=null;wlOff();
+      mMsg="Saved. "+nClock(MR.acc)+" of audio.";MR.id=0;setTimeout(function(){mRender()},200);
+    };
+    r.start(1000);wlOn();
+    try{
+      var AC=window.AudioContext||window.webkitAudioContext;MR.ac=new AC();var src=MR.ac.createMediaStreamSource(s),an=MR.ac.createAnalyser();an.fftSize=512;src.connect(an);
+      var buf=new Uint8Array(an.fftSize);
+      (function loop(){an.getByteTimeDomainData(buf);var m=0;for(var i=0;i<buf.length;i++)m=Math.max(m,Math.abs(buf[i]-128));var b=$("mrlv");if(b)b.style.width=Math.min(100,m/128*260)+"%";MR.raf=requestAnimationFrame(loop)})();
+    }catch(e){}
+    MR.tm=setInterval(function(){var t=$("mrt");if(t)t.textContent=nClock(mEl())},500);
+    mRender();
+  }).catch(function(){mMsg="The microphone is blocked. Allow the microphone for this site in your browser settings.";mRender()});
+}
+document.addEventListener("click",function(e){
+  var b=e.target.closest&&e.target.closest("[data-n^=mr]");if(!b)return;
+  var a=b.getAttribute("data-n");
+  if(a==="mrrec")mrStart();
+  else if(a==="mrstop"){if(MR.rec)try{MR.rec.stop()}catch(err){}}
+  else if(a==="mrpause"&&MR.rec){
+    if(MR.paused){MR.rec.resume();MR.seg=Date.now();MR.paused=false}else{MR.rec.pause();MR.acc+=Date.now()-MR.seg;MR.paused=true}
+    mRender();
+  }
+  else if(a==="mrdel"){
+    var i=b.getAttribute("data-i");
+    if(mArm===i){mDelDb(+i,function(){mArm="";mRender()})}else{mArm=i;setTimeout(function(){if(mArm===i){mArm="";mRender()}},3000);mRender()}
   }
 });
 dashNote();remCheck();
@@ -4307,7 +4406,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v58 · 26 Oct 2026";
+var APPV="v59 · 26 Oct 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
