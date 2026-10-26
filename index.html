@@ -818,7 +818,7 @@ html.swp,html.swp body{overflow-x:hidden}
   <h2>Hours this week</h2>
   <div class="vst"><div><b id="vhc">0h 00m</b><small>Holy Cross (tracked)</small></div><div><b id="var">0h 00m</b><small>Arches (estimate)</small></div><div><b id="vtot">0h 00m</b><small>Total this week</small></div></div>
   <p class="mnote" style="margin:0 0 8px">Holy Cross: if you work more than 6 hours in a day, 30 minutes break is taken off (not paid).</p>
-  <label for="varch">Hours for each Arches shift (estimate). 2:30pm to 12am = 9.5 hours</label><input id="varch" type="number" inputmode="decimal" min="0" max="16" step="0.5">
+  <label for="varch">Hours for an Arches shift with no time of its own (estimate). 2:30pm to 12am = 9.5 hours</label><input id="varch" type="number" inputmode="decimal" min="0" max="16" step="0.5">
 </div>
 <div class="card" id="bionudge" hidden>
   <h2>Turn on fingerprint login</h2>
@@ -1455,7 +1455,13 @@ var SEED=[
   {id:"rota-20261022",date:"2026-10-22",st:"ON",en:""},
   {id:"rota-20261023",date:"2026-10-23",st:"18:00",en:"Close"},
   {id:"rota-20261024",date:"2026-10-24",st:"16:00",en:"Close"},
-  {id:"rota-20261025",date:"2026-10-25",st:"14:00",en:"Close"}
+  {id:"rota-20261025",date:"2026-10-25",st:"14:00",en:"Close"},
+  {id:"rota-20261026",date:"2026-10-26",st:"ON",en:"",a:"18:00",b:"Close"},
+  {id:"rota-20261028",date:"2026-10-28",st:"15:00",en:"Close"},
+  {id:"rota-20261029",date:"2026-10-29",st:"08:30",en:"Close"},
+  {id:"rota-20261030",date:"2026-10-30",st:"10:00",en:"Close"},
+  {id:"rota-20261031",date:"2026-10-31",st:"16:00",en:"Close"},
+  {id:"rota-20261101",date:"2026-11-01",st:"16:00",en:"Close"}
 ];
 var seedDone=[],seedChanged=false;
 try{seedDone=JSON.parse(localStorage.getItem("hours_seed_v1")||"[]")}catch(e){seedDone=[]}
@@ -1466,10 +1472,11 @@ function applySeeds(){
   roster.forEach(function(r){have[r.id]=1});
   SEED.forEach(function(x){
     if(seedDone.indexOf(x.id)<0){
-      if(!have[x.id])roster.push({id:x.id,date:x.date,st:x.st,en:x.en});
+      if(!have[x.id])roster.push({id:x.id,date:x.date,st:x.st,en:x.en,a:x.a,b:x.b});
       seedDone.push(x.id);ch=true;
     }
   });
+  roster.forEach(function(r){if(r.date==="2026-10-26"&&r.st==="ON"&&!r.en&&!r.a){r.a="18:00";r.b="Close";ch=true}});
   if(ch){saveR();try{localStorage.setItem("hours_seed_v1",JSON.stringify(seedDone))}catch(e){}}
   return ch;
 }
@@ -1527,7 +1534,7 @@ function renderRoster(){
       rs.forEach(function(r){
         var on=(r.st==="ON"&&!r.en);
         var wi=on?"":withLine(r,di);
-        h+='<div class="'+cls+'"><div>'+lab+'</div><div>'+(on?'<span class="onp">Arches 14:30 – 12am</span>':'<b>'+fmtEntry(r)+'</b>')+' <button class="del" data-rid="'+r.id+'">Delete</button></div>'+(wi?'<div class="wi">'+wi+'</div>':'')+'</div>';
+        h+='<div class="'+cls+'"><div>'+lab+'</div><div>'+(on?'<span class="onp">Arches '+arLabel(r)+'</span>':'<b>'+fmtEntry(r)+'</b>')+' <button class="del" data-rid="'+r.id+'">Delete</button></div>'+(wi?'<div class="wi">'+wi+'</div>':'')+'</div>';
       });
     }else{h+='<div class="'+cls+'"><div>'+lab+'</div><span class="o">Off</span></div>'}
   }
@@ -1654,7 +1661,7 @@ renderBook();
 /* ---- v38: advanced Roster and Bookings ---- */
 var DNS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 var RS={tab:"week",day:iso(new Date()),month:new Date(new Date().getFullYear(),new Date().getMonth(),1)};
-function rMins(r){var on=(r.st==="ON"&&!r.en),a=on?870:toMin(r.st),b=on?1440:toMin(r.en);if(b<a)b=Math.min(1440,b+1440);return{a:a,b:b,on:on}}
+function rMins(r){var on=(r.st==="ON"&&!r.en),a=on?toMin(r.a||"14:30"):toMin(r.st),b=on?((r.b&&r.b!=="Close")?toMin(r.b):1440):toMin(r.en);if(b<a)b=Math.min(1440,b+1440);return{a:a,b:b,on:on}}
 function hm(m){m=Math.round(m);return m>=1440?"Close":pad(Math.floor(m/60))+":"+pad(m%60)}
 function dur(m){var h=Math.floor(m/60),mm=Math.round(m%60);return h+"h"+(mm?" "+pad(mm)+"m":"")}
 function rDay(di){return roster.filter(function(r){return r.date===di}).sort(function(x,y){return rMins(x).a-rMins(y).a})}
@@ -1966,6 +1973,12 @@ function smartRota(txt,wkIso){
     var di=iso(date);
     if(/^\s*note\b/.test(ln.toLowerCase())){out.push("NOTE "+di+" "+ln.replace(/^\s*note[:\s]*/i,"").replace(/\d{1,4}[-\/.]\d{1,2}([-\/.]\d{2,4})?/,"").trim());return}
     var hasT=/\d\s*(?:am|pm|:|\.)?\s*(?:-|to|till|until|til)\s*(?:close|late|\d)/.test(s);
+    if(hasT&&/\b(arches|rhs)\b/.test(s)){
+      var q2=/(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?\s*(?:-|to|till|until|til)\s*(close|late|cl\b|(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?)/.exec(s);
+      if(q2){var a2=fix(q2[1],q2[2],q2[3]);if(!a2.ap&&a2.h<8)a2.h+=12;var e2="Close";
+        if(!/^(close|late|cl)/.test(q2[4])){var b2=fix(q2[5],q2[6],q2[7]);if(!b2.ap&&b2.h<8)b2.h+=12;e2=pad(b2.h%24)+":"+pad(b2.m)}
+        out.push(di+" Arches "+pad(a2.h)+":"+pad(a2.m)+"-"+e2);return}
+    }
     if(!hasT){
       if(/\b(arches|rhs|on call|on)\b/.test(s)){out.push(di+" Arches");return}
       if(/\b(off|day off|holiday|leave|x)\b/.test(s)||!s.replace(/[^a-z0-9]/g,"")){skipped++;return}
@@ -2413,7 +2426,7 @@ window.vRender=function(){
   var end=new Date(wkStart);end.setDate(end.getDate()+6);
   var a=iso(wkStart),b=iso(end),hc=0,ac=0;
   shifts.forEach(function(s){if(s.date>=a&&s.date<=b)hc+=mins(s)});
-  roster.forEach(function(r){if(r.date>=a&&r.date<=b&&r.st==="ON"&&!r.en)ac+=archH*60});
+  roster.forEach(function(r){if(r.date>=a&&r.date<=b&&r.st==="ON"&&!r.en)ac+=arMin(r)});
   $("vhc").textContent=fmt(hc);$("var").textContent=fmt(ac);$("vtot").textContent=fmt(hc+ac);
   if(window.pdRender)pdRender();
 };
@@ -3708,6 +3721,10 @@ function pcRender(){
   var _s=show;show=function(ok){_s(ok);f.hidden=!ok;tog(false)};
   var ap=$("app");if(ap&&ap.style.display!=="none")f.hidden=false;
 })();
+
+/* ---- v57: Arches shift can have its own time ---- */
+function arLabel(r){return (r.a||"14:30")+" – "+(!r.b||r.b==="Close"?"12am":r.b)}
+function arMin(r){if(!r.a)return archH*60;var a=toMin(r.a),b=(r.b&&r.b!=="Close")?toMin(r.b):1440;if(b<=a)b+=1440;return b-a}
 var HASH="ce43ef7ac0487be787746eebe94f8648e87cd92c64b4d2762ed1fbe1b42a6ceb", AUTH="hours_auth_v1";
 function sha(t){
   return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){
@@ -3975,7 +3992,7 @@ function buildWeekPDF(){
   });
   if(list.length>maxRows){P.text(40,y,"... and "+(list.length-maxRows)+" more shifts",10,false,GR);y+=16}
   if(arch.length){
-    y+=8;P.text(40,y,"Arches Bar (roster, 14:30 – 12am): "+arch.map(function(r){return parse(r.date).toLocaleDateString("en-IE",{weekday:"short",day:"numeric",month:"short"})}).join(", "),10,false,GR);y+=16;
+    y+=8;P.text(40,y,"Arches Bar (roster): "+arch.map(function(r){return parse(r.date).toLocaleDateString("en-IE",{weekday:"short",day:"numeric",month:"short"})+" "+arLabel(r)}).join(", "),10,false,GR);y+=16;
   }
   P.hline(40,555,790,LG);
   P.text(40,806,"Estimate only: 2026 Irish rates, one job, tax credits "+eur(parseFloat(credits)>=0&&credits!==""?parseFloat(credits):4000)+" a year. Your payslip is the real figure.",8,false,GR);
@@ -4092,7 +4109,7 @@ function shData(kind){
   if(kind==="roster"){
     var rs=roster.filter(function(r){return r.date>=a&&r.date<=b}).sort(function(x,y){return x.date<y.date?-1:1});
     return {name:"roster-"+a,title:"Roster",sub:sub,size:12,cols:[{h:"Day",x:40,w:150},{h:"Where",x:200,w:140},{h:"Time",x:350,w:200}],
-      rows:rs.map(function(r){var e=eff(r);return [shDay(parse(r.date)),e.rhs?"Arches Bar":"Holy Cross",e.rhs?"14:30 – 12am":fmtEntry(r)]})};
+      rows:rs.map(function(r){var e=eff(r);return [shDay(parse(r.date)),e.rhs?"Arches Bar":"Holy Cross",e.rhs?arLabel(r):fmtEntry(r)]})};
   }
   if(kind==="hours"){
     var ls=shifts.filter(function(x){return x.date>=a&&x.date<=b}).sort(function(x,y){return (x.date+x.st)<(y.date+y.st)?-1:1}),tot=0;
@@ -4150,7 +4167,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v55 · 23 Oct 2026";
+var APPV="v57 · 26 Oct 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
@@ -4246,7 +4263,8 @@ $("padd").onclick=function(){
     if(!m){bad.push(ln);return}
     var date=m[1],rest=m[2].trim();
     if(/^off$/i.test(rest))return;
-    if(/^(rhs|on|arches)$/i.test(rest)){var id="p-"+date+"-rhs";if(!have[id]){roster.push({id:id,date:date,st:"ON",en:""});have[id]=1;added++}return}
+    var am=/^(rhs|on|arches)(?:\s+(\d{1,2}:\d{2})\s*(?:-|to)\s*(close|\d{1,2}:\d{2}))?$/i.exec(rest);
+    if(am){var a1=am[2]?normT(am[2]):null,b1=am[3]?(/^close$/i.test(am[3])?"Close":normT(am[3])):null;var ex=null;roster.forEach(function(r){if(r.date===date&&r.st==="ON"&&!r.en)ex=r});if(ex){if(a1&&(ex.a!==a1||ex.b!==b1)){ex.a=a1;ex.b=b1;added++}}else{var id="p-"+date+"-rhs";roster.push({id:id,date:date,st:"ON",en:"",a:a1||undefined,b:b1||undefined});have[id]=1;added++}return}
     var ok=true;
     rest.split(/\s*(?:,|&|\band\b)\s*/i).forEach(function(part){
       var q=/^(\d{1,2}:\d{2})\s*(?:-|to)?\s*(close|\d{1,2}:\d{2})$/i.exec(part.trim());
@@ -4278,7 +4296,7 @@ function notify(t,b){
     }else plain();
   }catch(e){}
 }
-function eff(r){return (r.st==="ON"&&!r.en)?{st:"14:30",en:"Close",rhs:true}:{st:r.st,en:r.en,rhs:false}}
+function eff(r){return (r.st==="ON"&&!r.en)?{st:r.a||"14:30",en:r.b||"Close",rhs:true}:{st:r.st,en:r.en,rhs:false}}
 function checkRemind(){
   var m=remMin(),box=$("remind");
   var now=new Date(),ti=iso(now),nm=now.getHours()*60+now.getMinutes(),hit=null;
