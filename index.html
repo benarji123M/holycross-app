@@ -1485,7 +1485,11 @@ var SEED=[
   {id:"rota-20261029",date:"2026-10-29",st:"08:30",en:"Close"},
   {id:"rota-20261030",date:"2026-10-30",st:"10:00",en:"Close"},
   {id:"rota-20261031",date:"2026-10-31",st:"16:00",en:"Close"},
-  {id:"rota-20261101",date:"2026-11-01",st:"16:00",en:"Close"}
+  {id:"rota-20261101",date:"2026-11-01",st:"16:00",en:"Close"},
+  {id:"rota-20261102",date:"2026-11-02",st:"ON",en:"",a:"18:00",b:"Close"},
+  {id:"rota-20261103",date:"2026-11-03",st:"11:00",en:"Close"},
+  {id:"rota-20261104",date:"2026-11-04",st:"10:00",en:"Close"},
+  {id:"rota-20261105",date:"2026-11-05",st:"10:00",en:"Close"}
 ];
 var seedDone=[],seedChanged=false;
 try{seedDone=JSON.parse(localStorage.getItem("hours_seed_v1")||"[]")}catch(e){seedDone=[]}
@@ -4406,7 +4410,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v59 · 26 Oct 2026";
+var APPV="v60 · 3 Nov 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
