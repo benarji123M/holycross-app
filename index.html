@@ -786,6 +786,17 @@ html.swp,html.swp body{overflow-x:hidden}
 .nbig.rec2{background:#b42318;max-width:340px}
 .mrbox{text-align:center}
 .mrt{font-size:48px;font-weight:800;font-variant-numeric:tabular-nums;color:#b42318;margin:6px 0}
+
+/* ---- v61: money groups ---- */
+.mgf{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.mgf button{border:2px solid var(--bd);background:var(--card);color:var(--tx);border-radius:99px;padding:9px 14px;font-weight:800;font-size:15px;font-family:inherit;cursor:pointer}
+.mgf button i{font-style:normal;opacity:.7;font-weight:700;margin-left:2px}
+.mgf button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.gch{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 4px}
+.gch button{border:2px solid var(--bd);background:var(--card);color:var(--tx);border-radius:14px;padding:10px 14px;font-weight:800;font-size:16px;font-family:inherit;cursor:pointer}
+.gch button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+:root[data-theme="dark"] .mgf button.on,:root[data-theme="dark"] .gch button.on{color:#0b1220}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .mgf button.on,:root:not([data-theme="light"]) .gch button.on{color:#0b1220}}
 </style>
 </head>
 <body>
@@ -2793,7 +2804,7 @@ function sumCur(list,f){var o={};list.forEach(function(x){if(x.done)return;o[x.c
 function curList(){var o={};Array.prototype.slice.call(arguments).forEach(function(m){for(var k in m)o[k]=1});return["EUR","INR"].filter(function(c){return o[c]})}
 function idxOf(list,id){for(var i=0;i<list.length;i++)if(list[i].id===id)return i;return-1}
 
-var MS={cur:"",tab:"over",open:null,edit:null};
+var MS={cur:"",tab:"over",open:null,edit:null,grp:"all",gsel:"friends"};
 function mAllCurs(){var o={};["given","taken","save"].forEach(function(k){loans[k].forEach(function(x){o[x.cur]=1})});return["INR","EUR"].filter(function(c){return o[c]})}
 function mCur(){var cs=mAllCurs();if(!cs.length)return MS.cur||"INR";if(cs.indexOf(MS.cur)<0)MS.cur=cs[0];return MS.cur}
 function mTot(list,cur,f){return list.reduce(function(t,x){return(x.done||x.cur!==cur)?t:t+f(x)},0)}
@@ -2835,19 +2846,29 @@ function mOver(c){
   '<div class="mcard"><h2>Day by day</h2><div class="tbw"><table class="mt"><tr><th></th><th>I get back</th><th>I pay</th><th>Difference</th></tr>'+rows+'</table></div><p class="mnote" style="margin:8px 0 0">These numbers go up by themselves every day.</p></div>';
 }
 function mLoans(k,c){
-  var list=loans[k],P=mTot(list,c,function(x){return parseFloat(x.p)||0}),I=mTot(list,c,function(x){return calcLoan(x).int}),T=P+I,D=mTot(list,c,function(x){return calcLoan(x).day}),T1=mTot(list,c,function(x){return calcLoan(x,1).tot});
-  var give=k==="given",h='<div class="mtiles"><div class="mtile"><small>Principal</small><b>'+money(P,c)+'</b></div><div class="mtile"><small>Interest so far</small><b class="'+(give?"gg":"rr")+'">'+money(I,c)+'</b></div><div class="mtile"><small>Total today</small><b>'+money(T,c)+"</b></div></div>";
+  var all=loans[k],give=k==="given",gs=give?["friends","home","other"]:["home","bank","friends","other"],cnt={};
+  all.forEach(function(x){var g=gOf(k,x);cnt[g]=(cnt[g]||0)+1});
+  if(MS.grp!=="all"&&gs.indexOf(MS.grp)<0)MS.grp="all";
+  var list=MS.grp==="all"?all:all.filter(function(x){return gOf(k,x)===MS.grp});
+  var h='<div class="mgf">'+[["all","All"]].concat(gs.map(function(g){return[g,GRP[g][0]+" "+GRP[g][1]]})).map(function(t){var n=t[0]==="all"?all.length:(cnt[t[0]]||0);return'<button type="button" class="'+(MS.grp===t[0]?"on":"")+'" data-a="gf" data-v="'+t[0]+'">'+t[1]+" <i>"+n+"</i></button>"}).join("")+"</div>";
+  var P=mTot(list,c,function(x){return parseFloat(x.p)||0}),I=mTot(list,c,function(x){return calcLoan(x).int}),T=P+I,D=mTot(list,c,function(x){return calcLoan(x).day}),T1=mTot(list,c,function(x){return calcLoan(x,1).tot});
+  h+='<div class="mtiles"><div class="mtile"><small>Principal</small><b>'+money(P,c)+'</b></div><div class="mtile"><small>Interest so far</small><b class="'+(give?"gg":"rr")+'">'+money(I,c)+'</b></div><div class="mtile"><small>Total today</small><b>'+money(T,c)+"</b></div></div>";
+  if(MS.grp==="all"&&all.length>1){
+    var parts=gs.map(function(g){var t=mTot(all.filter(function(x){return gOf(k,x)===g}),c,tf);return t?GRP[g][0]+" "+GRP[g][1]+" <b>"+money(t,c)+"</b>":""}).filter(Boolean);
+    if(parts.length>1)h+='<p class="mnote">'+parts.join(" · ")+"</p>";
+  }
   if(list.length)h+='<p class="mnote">Grows by <b>'+money(D,c)+'</b> every day. Total tomorrow: <b>'+money(T1,c)+"</b>.</p>";
-  h+='<button class="add" data-a="new" style="margin:0 0 14px">+ '+(give?"Add money I gave":"Add a loan I took")+"</button>";
+  h+='<button class="add" data-a="new" style="margin:0 0 14px">+ '+(give?"Add money I gave":"Add a loan I took")+(MS.grp!=="all"?" ("+GRP[MS.grp][1]+")":"")+"</button>";
   var act=list.filter(function(x){return!x.done}),dn=list.filter(function(x){return x.done});
-  if(!list.length)h+='<div class="mcard"><p class="mnote" style="margin:0">'+(give?"Nobody yet. Tap the button to add the first person.":"No loans yet. Tap the button to add a loan, for example from a bank.")+"</p></div>";
+  if(!list.length)h+='<div class="mcard"><p class="mnote" style="margin:0">'+(MS.grp!=="all"?"Nobody in this group yet. Tap the button to add one.":(give?"Nobody yet. Tap the button to add the first person.":"No loans yet. Tap the button to add a loan, for example from a bank."))+"</p></div>";
   act.concat(dn).forEach(function(L){h+=mRow(k,L)});
   return h;
 }
 function mRow(k,L){
   var q=calcLoan(L),q1=calcLoan(L,1),open=MS.open===L.id,give=k==="given";
-  var h='<div class="lrow'+(L.done?" done":"")+(give?" lg":" lt")+'"><button class="lhead" data-a="tog" data-id="'+L.id+'" aria-expanded="'+open+'"><span class="av2">'+lesc(ini(L.name))+'</span><span class="lm"><b>'+lesc(L.name)+(L.done?" (settled)":"")+"</b><small>"+money(L.p,L.cur)+" · "+rtxt(L)+" · "+fdate(L.date)+'</small></span><span class="lr"><b>'+money(q.tot,L.cur)+'</b><small class="'+(give?"gg":"rr")+'">+ '+money(q.int,L.cur)+" interest</small></span></button>";
+  var h='<div class="lrow'+(L.done?" done":"")+(give?" lg":" lt")+'"><button class="lhead" data-a="tog" data-id="'+L.id+'" aria-expanded="'+open+'"><span class="av2">'+lesc(ini(L.name))+'</span><span class="lm"><b>'+lesc(L.name)+(L.done?" (settled)":"")+"</b><small>"+GRP[gOf(k,L)][0]+" "+GRP[gOf(k,L)][1]+" · "+money(L.p,L.cur)+" · "+rtxt(L)+" · "+fdate(L.date)+'</small></span><span class="lr"><b>'+money(q.tot,L.cur)+'</b><small class="'+(give?"gg":"rr")+'">+ '+money(q.int,L.cur)+" interest</small></span></button>";
   if(open)h+='<div class="ldet">'+
+    '<div class="rd"><span>Group</span><span>'+GRP[gOf(k,L)][0]+" "+GRP[gOf(k,L)][1]+"</span></div>"+
     '<div class="rd"><span>Principal</span><span>'+money(L.p,L.cur)+"</span></div>"+
     '<div class="rd"><span>'+(give?"Given on":"Taken on")+"</span><span>"+fdate(L.date)+"</span></div>"+
     '<div class="rd"><span>Interest rate</span><span>'+rtxt(L)+"</span></div>"+
@@ -2865,11 +2886,13 @@ function openSheet(type,id){
   if(type==="loan"){
     if(id){L=loans[k][idxOf(loans[k],id)]}
     var give=k==="given";
+    MS.gsel=L?gOf(k,L):(MS.grp!=="all"?MS.grp:(give?"friends":"home"));
     h='<h2>'+(L?"Change this":(give?"Add money I gave":"Add a loan I took"))+'</h2>'+
     '<label for="sN">'+(give?"Name of the person":"Who gave you the loan? (a person or a bank)")+'</label><input id="sN" type="text" maxlength="40" placeholder="'+(give?"Ramu":"Bank or name")+'" value="'+(L?lesc(L.name):"")+'">'+
-    '<div class="row"><div><label for="sP">Amount</label><input id="sP" type="number" inputmode="decimal" placeholder="100000" value="'+(L?L.p:"")+'"></div><div><label for="sC">Money</label><select id="sC"><option value="INR"'+(L&&L.cur==="EUR"?"":" selected")+'>₹ Rupees</option><option value="EUR"'+(L&&L.cur==="EUR"?" selected":"")+'>€ Euro</option></select></div></div>'+
+    gChips(k)+'<div class="row"><div><label for="sP">Amount</label><input id="sP" type="number" inputmode="decimal" placeholder="100000" value="'+(L?L.p:"")+'"></div><div><label for="sC">Money</label><select id="sC"><option value="INR"'+(L&&L.cur==="EUR"?"":" selected")+'>₹ Rupees</option><option value="EUR"'+(L&&L.cur==="EUR"?" selected":"")+'>€ Euro</option></select></div></div>'+
     '<div class="rbox"><label for="sR">Interest rate (%)</label><div class="rin"><input id="sR" type="number" inputmode="decimal" step="0.01" placeholder="8" value="'+(L?L.rate:"")+'"><span>%</span></div>'+
-    '<div class="chips">'+[2,5,8,10,12,18,24].map(function(v){return'<button type="button" class="chip" data-a="rate" data-v="'+v+'">'+v+'%</button>'}).join("")+'</div>'+
+    '<div class="chips">'+[1,1.5,2,3,5,8,10,12,18,24].map(function(v){return'<button type="button" class="chip" data-a="rate" data-v="'+v+'">'+v+'%</button>'}).join("")+'</div>'+
+    '<p class="mnote" style="margin:6px 0 0">In India people say "₹2 interest". That means ₹2 on every ₹100, so type <b>2</b> and choose "per month".</p>'+
     '<label for="sM">How often?</label><select id="sM"><option value="y"'+((L?L.per==="y":!give)?" selected":"")+'>% per year (bank)</option><option value="m"'+((L?L.per!=="y":give)?" selected":"")+'>% per month</option></select></div>'+
     '<div class="hint" id="sPrev"></div>'+
     '<div class="row"><div><label for="sD">'+(give?"Date given":"Date taken")+'</label><input id="sD" type="date" value="'+(L?L.date:isoNow())+'"></div></div>'+
@@ -2878,7 +2901,7 @@ function openSheet(type,id){
   }else{
     P=id?loans.save[idxOf(loans.save,id)]:null;
     h='<h2>'+(P?"Change this pot":"Add a savings pot")+'</h2><label for="sN">Name</label><input id="sN" type="text" maxlength="40" placeholder="Bank, Credit Union, Cash" value="'+(P?lesc(P.name):"")+'">'+
-    '<div class="row"><div><label for="sP">Amount saved</label><input id="sP" type="number" inputmode="decimal" placeholder="0" value="'+(P?P.amt:"")+'"></div><div><label for="sC">Money</label><select id="sC"><option value="EUR"'+(P&&P.cur==="INR"?"":" selected")+'>€ Euro</option><option value="INR"'+(P&&P.cur==="INR"?" selected":"")+'>₹ Rupees</option></select></div></div>'+
+    '<div class="row"><div><label for="sP">Amount saved</label><input id="sP" type="number" inputmode="decimal" placeholder="0" value="'+(P?P.amt:"")+'"></div><div><label for="sC">Money</label><select id="sC"><option value="INR"'+(P&&P.cur==="EUR"?"":" selected")+'>₹ Rupees</option><option value="EUR"'+(P&&P.cur==="EUR"?" selected":"")+'>€ Euro</option></select></div></div>'+
     '<div class="rbox"><label for="sR">Bank interest (% a year)</label><div class="rin"><input id="sR" type="number" inputmode="decimal" step="0.01" placeholder="3" value="'+(P&&P.rate?P.rate:"")+'"><span>%</span></div><div class="chips">'+[1,2,3,4,5,7].map(function(v){return'<button type="button" class="chip" data-a="rate" data-v="'+v+'">'+v+'%</button>'}).join("")+'</div></div>'+
     '<div class="hint" id="sPrev"></div>'+
     '<div class="row"><div><label for="sG">Goal (optional)</label><input id="sG" type="number" inputmode="decimal" placeholder="5000" value="'+(P&&P.goal?P.goal:"")+'"></div></div>';
@@ -2893,7 +2916,7 @@ function sheetSave(type){
   if(type==="loan"){
     var k=MS.tab,p=parseFloat($("sP").value),d=$("sD").value;
     if(!n||!(p>0)||!d){toast("Please fill the name, amount and date");return}
-    var o={id:MS.edit||String(Date.now()),name:n,p:p,rate:parseFloat($("sR").value)||0,per:$("sM").value,cur:$("sC").value,date:d,note:$("sT").value.trim(),done:false};
+    var o={id:MS.edit||String(Date.now()),name:n,p:p,rate:parseFloat($("sR").value)||0,per:$("sM").value,cur:$("sC").value,date:d,note:$("sT").value.trim(),grp:MS.gsel,done:false};
     if(MS.edit){var i=idxOf(loans[k],MS.edit);if(i>=0){o.done=loans[k][i].done;loans[k][i]=o}}else loans[k].push(o);
     MS.cur=o.cur;
   }else{
@@ -2906,12 +2929,14 @@ function sheetSave(type){
 function mClick(e){
   var b=e.target.closest("[data-t],[data-cur],[data-a]");
   if(!b){if(e.target.id==="sheet")closeSheet();return}
-  if(b.hasAttribute("data-t")){MS.tab=b.getAttribute("data-t");MS.open=null;renderMoney();return}
+  if(b.hasAttribute("data-t")){MS.tab=b.getAttribute("data-t");MS.open=null;MS.grp="all";renderMoney();return}
   if(b.hasAttribute("data-cur")){MS.cur=b.getAttribute("data-cur");renderMoney();return}
   var a=b.getAttribute("data-a"),id=b.getAttribute("data-id"),k=MS.tab;
   if(a==="new")openSheet("loan");
   else if(a==="newsave")openSheet("save");
   else if(a==="rate"){$("sR").value=b.getAttribute("data-v");updPrev()}
+  else if(a==="grp"){MS.gsel=b.getAttribute("data-v");Array.prototype.forEach.call(b.parentNode.children,function(x){x.classList.toggle("on",x===b)})}
+  else if(a==="gf"){MS.grp=b.getAttribute("data-v");MS.open=null;renderMoney()}
   else if(a==="editsave")openSheet("save",id);
   else if(a==="sheetclose")closeSheet();
   else if(a==="sheetsave")sheetSave(b.getAttribute("data-type"));
@@ -3890,7 +3915,7 @@ function prevTxt(){
   var p=parseFloat(($("sP")||{}).value)||0,r=parseFloat(($("sR")||{}).value)||0,sm=$("sM"),pe=sm?sm.value:"y",c=($("sC")||{}).value||"INR";
   if(!(p>0)||!(r>0))return "Type the amount and the % to see the interest here.";
   var yr=pe==="y"?p*r/100:p*r/100*12;
-  return money(p,c)+" at <b>"+r+"%</b> "+(pe==="y"?"a year":"a month")+" = <b>"+money(yr,c)+"</b> every year, or <b>"+money(yr/12,c)+"</b> every month.";
+  return money(p,c)+" at <b>"+r+"%</b> "+(pe==="y"?"a year":"a month ("+(c==="EUR"?"€":"₹")+r+" on every "+(c==="EUR"?"€":"₹")+"100)")+" = <b>"+money(yr,c)+"</b> every year, or <b>"+money(yr/12,c)+"</b> every month.";
 }
 function updPrev(){var e=$("sPrev");if(e)e.innerHTML=prevTxt()}
 document.addEventListener("input",function(e){if(e.target.closest&&e.target.closest("#sbox"))updPrev()});
@@ -3968,6 +3993,25 @@ function pcRender(){
 /* ---- v57: Arches shift can have its own time ---- */
 function arLabel(r){return (r.a||"14:30")+" – "+(!r.b||r.b==="Close"?"12am":r.b)}
 function arMin(r){if(!r.a)return archH*60;var a=toMin(r.a),b=(r.b&&r.b!=="Close")?toMin(r.b):1440;if(b<=a)b+=1440;return b-a}
+
+/* ---- v61: money groups (Friends, Home, Bank, Other) ---- */
+var GRP={friends:["👥","Friends"],home:["🏠","Home"],bank:["🏦","Bank"],other:["📌","Other"]};
+function gOf(k,L){return GRP[L.grp]?L.grp:(k==="given"?"friends":"bank")}
+function gChips(k){
+  var gs=k==="given"?["friends","home","other"]:["home","bank","friends","other"];
+  return '<label>Who is it? (to keep them separate)</label><div class="gch">'+gs.map(function(g){return'<button type="button" class="'+(MS.gsel===g?"on":"")+'" data-a="grp" data-v="'+g+'">'+GRP[g][0]+" "+GRP[g][1]+"</button>"}).join("")+"</div>";
+}
+function byGroup(c){
+  var rows="",any=false;
+  ["friends","home","bank","other"].forEach(function(g){
+    var gv=mTot(loans.given.filter(function(x){return gOf("given",x)===g}),c,tf),tk=mTot(loans.taken.filter(function(x){return gOf("taken",x)===g}),c,tf);
+    if(!gv&&!tk)return;any=true;
+    rows+="<tr><td>"+GRP[g][0]+" "+GRP[g][1]+'</td><td class="gg">'+(gv?money(gv,c):"–")+'</td><td class="rr">'+(tk?money(tk,c):"–")+"</td></tr>";
+  });
+  if(!any)return"";
+  return'<div class="mcard"><h2>Friends, Home and others</h2><div class="tbw"><table class="mt"><tr><th></th><th>I get back</th><th>I pay</th></tr>'+rows+'</table></div><p class="mnote" style="margin:8px 0 0">Each group is kept separate. Open <b>I gave</b> or <b>I took</b> and tap a group to see only that group.</p></div>';
+}
+(function(){var _mo=mOver;mOver=function(c){return _mo(c)+byGroup(c)};renderMoney()})();
 var HASH="ce43ef7ac0487be787746eebe94f8648e87cd92c64b4d2762ed1fbe1b42a6ceb", AUTH="hours_auth_v1";
 function sha(t){
   return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){
@@ -4410,7 +4454,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v60 · 3 Nov 2026";
+var APPV="v61 · 10 Nov 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
