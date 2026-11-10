@@ -797,6 +797,9 @@ html.swp,html.swp body{overflow-x:hidden}
 .gch button.on{background:var(--ac);border-color:var(--ac);color:#fff}
 :root[data-theme="dark"] .mgf button.on,:root[data-theme="dark"] .gch button.on{color:#0b1220}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .mgf button.on,:root:not([data-theme="light"]) .gch button.on{color:#0b1220}}
+
+.gsec{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:16px 0 8px;padding:10px 12px;background:var(--bg);border:1px solid var(--bd);border-radius:12px;font-size:14px}
+.gsec b:first-child{font-size:16px}
 </style>
 </head>
 <body>
@@ -2846,7 +2849,7 @@ function mOver(c){
   '<div class="mcard"><h2>Day by day</h2><div class="tbw"><table class="mt"><tr><th></th><th>I get back</th><th>I pay</th><th>Difference</th></tr>'+rows+'</table></div><p class="mnote" style="margin:8px 0 0">These numbers go up by themselves every day.</p></div>';
 }
 function mLoans(k,c){
-  var all=loans[k],give=k==="given",gs=give?["friends","home","other"]:["home","bank","friends","other"],cnt={};
+  var all=loans[k],give=k==="given",gs=["friends","home","bank","other"],cnt={};
   all.forEach(function(x){var g=gOf(k,x);cnt[g]=(cnt[g]||0)+1});
   if(MS.grp!=="all"&&gs.indexOf(MS.grp)<0)MS.grp="all";
   var list=MS.grp==="all"?all:all.filter(function(x){return gOf(k,x)===MS.grp});
@@ -2861,7 +2864,14 @@ function mLoans(k,c){
   h+='<button class="add" data-a="new" style="margin:0 0 14px">+ '+(give?"Add money I gave":"Add a loan I took")+(MS.grp!=="all"?" ("+GRP[MS.grp][1]+")":"")+"</button>";
   var act=list.filter(function(x){return!x.done}),dn=list.filter(function(x){return x.done});
   if(!list.length)h+='<div class="mcard"><p class="mnote" style="margin:0">'+(MS.grp!=="all"?"Nobody in this group yet. Tap the button to add one.":(give?"Nobody yet. Tap the button to add the first person.":"No loans yet. Tap the button to add a loan, for example from a bank."))+"</p></div>";
-  act.concat(dn).forEach(function(L){h+=mRow(k,L)});
+  if(MS.grp==="all"){
+    gs.forEach(function(g){
+      var items=act.concat(dn).filter(function(x){return gOf(k,x)===g});if(!items.length)return;
+      var gp=mTot(items,c,function(x){return parseFloat(x.p)||0}),gi=mTot(items,c,function(x){return calcLoan(x).int});
+      h+='<div class="gsec"><b>'+GRP[g][0]+" "+GRP[g][1]+"</b><span>Interest "+money(gi,c)+" · Total <b>"+money(gp+gi,c)+"</b></span></div>";
+      items.forEach(function(L){h+=mRow(k,L)});
+    });
+  }else act.concat(dn).forEach(function(L){h+=mRow(k,L)});
   return h;
 }
 function mRow(k,L){
@@ -3998,18 +4008,28 @@ function arMin(r){if(!r.a)return archH*60;var a=toMin(r.a),b=(r.b&&r.b!=="Close"
 var GRP={friends:["👥","Friends"],home:["🏠","Home"],bank:["🏦","Bank"],other:["📌","Other"]};
 function gOf(k,L){return GRP[L.grp]?L.grp:(k==="given"?"friends":"bank")}
 function gChips(k){
-  var gs=k==="given"?["friends","home","other"]:["home","bank","friends","other"];
+  var gs=["friends","home","bank","other"];
   return '<label>Who is it? (to keep them separate)</label><div class="gch">'+gs.map(function(g){return'<button type="button" class="'+(MS.gsel===g?"on":"")+'" data-a="grp" data-v="'+g+'">'+GRP[g][0]+" "+GRP[g][1]+"</button>"}).join("")+"</div>";
 }
+function gStat(list,c){var p=mTot(list,c,function(x){return parseFloat(x.p)||0}),i=mTot(list,c,function(x){return calcLoan(x).int});return{p:p,i:i,t:p+i}}
+function gBlk(lbl,s,c,cls){return'<div class="rd"><span class="w">'+lbl+'</span><b class="'+cls+'">'+money(s.t,c)+'</b></div><div class="rd"><span>Money (principal)</span><span>'+money(s.p,c)+'</span></div><div class="rd"><span>Interest so far</span><span>'+money(s.i,c)+"</span></div>"}
+function gCard(title,G,T,c,note){
+  var g=gStat(G,c),t=gStat(T,c);if(!g.p&&!t.p)return"";
+  var h='<div class="mcard"><h2>'+title+"</h2>";
+  if(g.p)h+=gBlk("I get back",g,c,"gg");
+  if(g.p&&t.p)h+='<div style="height:8px"></div>';
+  if(t.p)h+=gBlk("I pay back",t,c,"rr");
+  if(g.p&&t.p){var d=g.t-t.t;h+='<div class="rd"><span class="w">Difference</span><b class="'+(d>=0?"gg":"rr")+'">'+(d<0?"− ":"")+money(Math.abs(d),c)+"</b></div>"}
+  return h+(note?'<p class="mnote" style="margin:8px 0 0">'+note+"</p>":"")+"</div>";
+}
 function byGroup(c){
-  var rows="",any=false;
+  var h="",n=0;
   ["friends","home","bank","other"].forEach(function(g){
-    var gv=mTot(loans.given.filter(function(x){return gOf("given",x)===g}),c,tf),tk=mTot(loans.taken.filter(function(x){return gOf("taken",x)===g}),c,tf);
-    if(!gv&&!tk)return;any=true;
-    rows+="<tr><td>"+GRP[g][0]+" "+GRP[g][1]+'</td><td class="gg">'+(gv?money(gv,c):"–")+'</td><td class="rr">'+(tk?money(tk,c):"–")+"</td></tr>";
+    var G=loans.given.filter(function(x){return gOf("given",x)===g}),T=loans.taken.filter(function(x){return gOf("taken",x)===g});
+    var card=gCard(GRP[g][0]+" "+GRP[g][1],G,T,c);if(card){n++;h+=card}
   });
-  if(!any)return"";
-  return'<div class="mcard"><h2>Friends, Home and others</h2><div class="tbw"><table class="mt"><tr><th></th><th>I get back</th><th>I pay</th></tr>'+rows+'</table></div><p class="mnote" style="margin:8px 0 0">Each group is kept separate. Open <b>I gave</b> or <b>I took</b> and tap a group to see only that group.</p></div>';
+  if(!n)return"";
+  return h+gCard("🧮 All together",loans.given,loans.taken,c,"Everything in one place: Friends, Home, Bank and Other added up.");
 }
 (function(){var _mo=mOver;mOver=function(c){return _mo(c)+byGroup(c)};renderMoney()})();
 var HASH="ce43ef7ac0487be787746eebe94f8648e87cd92c64b4d2762ed1fbe1b42a6ceb", AUTH="hours_auth_v1";
@@ -4454,7 +4474,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v61 · 10 Nov 2026";
+var APPV="v62 · 10 Nov 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
