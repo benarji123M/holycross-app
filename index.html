@@ -800,6 +800,17 @@ html.swp,html.swp body{overflow-x:hidden}
 
 .gsec{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:16px 0 8px;padding:10px 12px;background:var(--bg);border:1px solid var(--bd);border-radius:12px;font-size:14px}
 .gsec b:first-child{font-size:16px}
+
+/* ---- v63: one home box (banner moved into the profile card) ---- */
+.hero{display:none!important}
+.pclo{position:absolute;top:10px;right:12px;z-index:2;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:99px;padding:6px 12px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer}
+.pcsh{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.pcsh div{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:10px 12px;min-width:0}
+.pcsh small{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#2de2e6;font-weight:700}
+.pcsh b{display:block;font-size:19px;font-weight:900;margin-top:2px;overflow-wrap:anywhere}
+.pcsh span{display:block;font-size:14px;font-weight:700;margin-top:4px;overflow-wrap:anywhere}
+.pcdt{position:relative;margin-top:12px;font-size:13px;font-weight:700;color:rgba(255,255,255,.85)}
+@media (max-width:360px){.pcsh{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -3966,9 +3977,10 @@ function pcRender(){
   var el=$("pcard");if(!el)return;
   var hrs=pcHrs(),lv=1+Math.floor(hrs/8),xp=(hrs%8)/8*100,src=pcSrc();
   var nt=typeof NT!=="undefined"&&NT.length?NT.length:0,pj=typeof PJ!=="undefined"&&PJ.length?PJ.length:0;
-  var gr=(($("greet")||{}).textContent||"Welcome"),sig=[Math.round(hrs*10),src.length,nt,pj,gr].join("|");if(sig===pcSig)return;pcSig=sig;
-  el.innerHTML='<div class="pc" id="pcc"><div class="pci"><div class="pctop"><div class="pcph"><span class="ring"></span><div class="ph" id="pcph">'+(src?'<img alt="Me" src="'+src+'">':"B")+'</div><em>💻</em><em>🍺</em><em>🚀</em></div>'+
+  var gr=(($("greet")||{}).textContent||"Welcome"),tdy=(($("hstoday")||{}).textContent||"—"),nxt=(($("hsnext")||{}).textContent||"—"),dts=new Date().toLocaleDateString("en-IE",{weekday:"long",day:"numeric",month:"long"}),sig=[Math.round(hrs*10),src.length,nt,pj,gr,tdy,nxt,dts].join("|");if(sig===pcSig)return;pcSig=sig;
+  el.innerHTML='<div class="pc" id="pcc"><div class="pci"><button type="button" class="pclo" id="pclo">Log out</button><div class="pctop"><div class="pcph"><span class="ring"></span><div class="ph" id="pcph">'+(src?'<img alt="Me" src="'+src+'">':"B")+'</div><em>💻</em><em>🍺</em><em>🚀</em></div>'+
   '<div class="pcn"><small>'+esc2(gr)+' 👋</small><h2>BENARJI MANDALA</h2><div class="pcr" id="pcr">'+PCW[pcI]+'</div><div class="pcl">The Holy Cross · Waterford · Ireland</div></div></div>'+
+  '<div class="pcdt">📅 '+esc2(dts)+'</div><div class="pcsh"><div><small>Today</small><b>'+esc2(tdy)+'</b></div><div><small>Next shift</small><span>'+esc2(nxt)+'</span></div></div>'+
   '<div class="pcx"><div><span>Level '+lv+'</span><span>'+Math.round(xp)+'% to level '+(lv+1)+'</span></div><i><b style="width:'+xp.toFixed(0)+'%"></b></i></div>'+
   '<div class="pcs"><div><b>'+hrs.toFixed(1)+'</b><small>Hours</small></div><div><b>'+lv+'</b><small>Level</small></div><div><b>'+nt+'</b><small>Notes</small></div><div><b>'+pj+'</b><small>Projects</small></div></div>'+
   '<div class="pcb2"><span>🎓 MSc</span><span>🍺 Bar</span><span>💻 Web</span><span>🗣 English</span><span>🇮🇳→🇮🇪</span></div></div></div>';
@@ -3976,6 +3988,7 @@ function pcRender(){
   c.addEventListener("pointermove",function(e){if(e.pointerType==="touch")return;var r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.style.transform="rotateY("+(x*10).toFixed(1)+"deg) rotateX("+(-y*10).toFixed(1)+"deg)"});
   c.addEventListener("pointerleave",function(){c.style.transform=""});
   $("pcph").onclick=function(){$("pic").click()};
+  $("pclo").onclick=function(){$("lo").click()};
 }
 (function(){
   var h=$("hero");if(h)h.insertAdjacentHTML("afterend",'<div class="pcw" id="pcard"></div>');
@@ -4474,7 +4487,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v62 · 10 Nov 2026";
+var APPV="v63 · 11 Nov 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
