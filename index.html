@@ -801,6 +801,14 @@ html.swp,html.swp body{overflow-x:hidden}
 .gsec{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:16px 0 8px;padding:10px 12px;background:var(--bg);border:1px solid var(--bd);border-radius:12px;font-size:14px}
 .gsec b:first-child{font-size:16px}
 
+.edf{flex-basis:100%;width:100%;margin:8px 0 4px;padding:10px 12px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);text-align:left}
+.edf .row{margin-top:6px}.edf .row>div{flex:1;min-width:0}
+.edf .btns{margin-top:10px}.edf .btns .add{margin-top:0}
+.edt{font-size:13px;font-weight:600;color:var(--mu)}
+.edc{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--tx);margin-top:8px}.edc input{width:auto}
+.mwk{margin-top:14px}.mwr{padding:8px 0;border-top:1px solid var(--bd)}
+.mwl{display:flex;justify-content:space-between;gap:8px;font-size:14px}.mwl span{color:var(--mu)}
+.mwb{height:8px;margin-top:6px;border-radius:4px;background:var(--bd);overflow:hidden}.mwb i{display:block;height:100%;border-radius:4px;background:var(--ac)}
 /* ---- v63: one home box (banner moved into the profile card) ---- */
 .hero{display:none!important}
 .pclo{position:absolute;top:10px;right:12px;z-index:2;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:99px;padding:6px 12px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer}
@@ -1403,6 +1411,28 @@ setInterval(function(){
 
 var wkStart=monday(new Date());
 var $=function(i){return document.getElementById(i)};
+/* ---- v69: edit a shift time, month week by week ---- */
+var RE=null,SE=null;
+function edIn(id,lab,type,val,extra){return '<div><label for="'+id+'">'+lab+'</label><input id="'+id+'" type="'+type+'" value="'+val+'"'+(extra||'')+'></div>'}
+function reForm(r,on){
+  var st=on?(r.a||"14:30"):r.st,en=on?(r.b||"Close"):r.en,cl=(en==="Close");
+  return '<div class="edf"><div class="edt">'+(on?"Change Arches time":"Change shift time")+'</div><div class="row">'+edIn("reS","Starts","time",st)+edIn("reE","Ends","time",cl?"":en,cl?" disabled":"")+'</div><label class="edc"><input type="checkbox" id="reC"'+(cl?" checked":"")+'> Until close</label><div class="btns"><button class="add" data-resave="'+r.id+'">Save</button><button class="add ghost" data-recancel="1">Cancel</button></div></div>';
+}
+function seForm(s){
+  return '<div class="edf"><div class="edt">Change this shift</div><div class="row">'+edIn("seS","Clock in","time",s.st)+edIn("seE","Clock out","time",s.en)+'</div><div class="row">'+edIn("seD","Date","date",s.date)+edIn("seB","Break (min)","number",(+s.brk||0),' min="0" inputmode="numeric"')+'</div><div class="btns"><button class="add" data-sesave="'+s.id+'">Save</button><button class="add ghost" data-secancel="1">Cancel</button></div></div>';
+}
+function monthWeeks(l){
+  if(!l.length)return "";
+  var wk={},keys=[],mx=0,o={day:"numeric",month:"short"};
+  l.forEach(function(s){var k=iso(monday(parse(s.date)));if(!wk[k]){wk[k]={m:0,p:0};keys.push(k)}wk[k].m+=mins(s);wk[k].p+=mins(s)/60*rateFor(s.date)});
+  keys.sort();keys.forEach(function(k){if(wk[k].m>mx)mx=wk[k].m});
+  var h='<div class="mwk"><div class="edt">Week by week (days in this month only)</div>';
+  keys.forEach(function(k){
+    var a=parse(k),b=new Date(a);b.setDate(b.getDate()+6);
+    h+='<div class="mwr"><div class="mwl"><span>'+a.toLocaleDateString(undefined,o)+' to '+b.toLocaleDateString(undefined,o)+'</span><b>'+fmt(wk[k].m)+(wk[k].p>0?' · €'+wk[k].p.toFixed(2):'')+'</b></div><div class="mwb"><i style="width:'+Math.max(2,Math.round(wk[k].m/mx*100))+'%"></i></div></div>';
+  });
+  return h+'</div>';
+}
 $("rate").value=rate;
 
 function render(){
@@ -1422,7 +1452,7 @@ function render(){
   if(!list.length)h='<div class="empty">No shifts this week</div>';
   list.forEach(function(s,i){
     var d=parse(s.date).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"});
-    h+='<div class="shift"><div><b>'+d+'</b>'+(s.extra?'<em class="pill-x">Called in · off day</em>':'')+'<span>'+s.st+' – '+s.en+(+s.brk?' · break '+s.brk+'m':'')+'</span></div><div><span class="h">'+fmt(mins(s))+(rateFor(s.date)>0?' · <span class="eur">'+eur(mins(s)/60*rateFor(s.date))+'</span>':'')+'</span><button class="xbtn" data-ex="'+s.id+'" title="Rota said off">'+(s.extra?'Not called in':'Called in')+'</button><button class="del" data-id="'+s.id+'">Delete</button></div></div>';
+    h+='<div class="shift"><div><b>'+d+'</b>'+(s.extra?'<em class="pill-x">Called in · off day</em>':'')+'<span>'+s.st+' – '+s.en+(+s.brk?' · break '+s.brk+'m':'')+'</span></div><div><span class="h">'+fmt(mins(s))+(rateFor(s.date)>0?' · <span class="eur">'+eur(mins(s)/60*rateFor(s.date))+'</span>':'')+'</span><button class="xbtn" data-ex="'+s.id+'" title="Rota said off">'+(s.extra?'Not called in':'Called in')+'</button><button class="xbtn" data-sed="'+s.id+'">Edit</button><button class="del" data-id="'+s.id+'">Delete</button></div></div>'+(String(SE)===String(s.id)?seForm(s):'');
     var day=list.filter(function(x){return x.date===s.date});
     var nx=list[i+1];
     if(day.length>1&&(!nx||nx.date!==s.date)){
@@ -1587,7 +1617,7 @@ function renderRoster(){
       rs.forEach(function(r){
         var on=(r.st==="ON"&&!r.en);
         var wi=on?"":withLine(r,di);
-        h+='<div class="'+cls+'"><div>'+lab+'</div><div>'+(on?'<span class="onp">Arches '+arLabel(r)+'</span>':'<b>'+fmtEntry(r)+'</b>')+' <button class="del" data-rid="'+r.id+'">Delete</button></div>'+(wi?'<div class="wi">'+wi+'</div>':'')+'</div>';
+        h+='<div class="'+cls+'"><div>'+lab+'</div><div>'+(on?'<span class="onp">Arches '+arLabel(r)+'</span>':'<b>'+fmtEntry(r)+'</b>')+' <button class="xbtn" data-red="'+r.id+'">Edit</button><button class="del" data-rid="'+r.id+'">Delete</button></div>'+(wi?'<div class="wi">'+wi+'</div>':'')+(String(RE)===String(r.id)?reForm(r,on):'')+'</div>';
       });
     }else{h+='<div class="'+cls+'"><div>'+lab+'</div><span class="o">Off</span></div>'}
   }
@@ -1613,6 +1643,43 @@ $("rlist").onclick=function(e){
   if(!id)return;
   roster=roster.filter(function(r){return String(r.id)!==id});saveR();renderRoster();
 };
+$("rlist").addEventListener("click",function(e){
+  var t=e.target,g=function(n){return t.getAttribute?t.getAttribute(n):null};
+  var ed=g("data-red"),sv=g("data-resave");
+  if(ed){RE=(String(RE)===ed)?null:ed;renderRoster();return}
+  if(g("data-recancel")){RE=null;renderRoster();return}
+  if(sv){
+    var st=$("reS").value,cl=$("reC").checked,en=cl?"Close":$("reE").value;
+    if(!st||!en){toast("Please fill start and end (or tick Until close)");return}
+    roster.forEach(function(r){
+      if(String(r.id)!==sv)return;
+      if(r.st==="ON"&&!r.en){r.a=st;r.b=en}else{r.st=st;r.en=en}
+    });
+    saveR();RE=null;renderRoster();
+    if(typeof render==="function")render();
+    if(typeof pdRender==="function")pdRender();
+    toast("Shift time changed");
+  }
+});
+$("rlist").addEventListener("change",function(e){
+  if(e.target.id==="reC"){$("reE").disabled=e.target.checked;if(e.target.checked)$("reE").value=""}
+});
+$("list").addEventListener("click",function(e){
+  var t=e.target,g=function(n){return t.getAttribute?t.getAttribute(n):null};
+  var ed=g("data-sed"),sv=g("data-sesave");
+  if(ed){SE=(String(SE)===ed)?null:ed;render();return}
+  if(g("data-secancel")){SE=null;render();return}
+  if(sv){
+    var st=$("seS").value,en=$("seE").value,dt=$("seD").value,br=parseInt($("seB").value,10)||0;
+    if(!st||!en||!dt){toast("Please fill date, clock in and clock out");return}
+    if(br<0)br=0;
+    shifts.forEach(function(s){if(String(s.id)===sv){s.st=st;s.en=en;s.date=dt;s.brk=br}});
+    save();SE=null;wkStart=monday(parse(dt));render();
+    if(typeof renderMonth==="function")renderMonth();
+    if(typeof pdRender==="function")pdRender();
+    toast("Shift changed");
+  }
+});
 $("rd").value=iso(new Date());
 applySeeds();
 renderRoster();
@@ -2548,7 +2615,7 @@ function renderMonth(){
   var tot=l.reduce(function(t,s){return t+mins(s)},0),pv=payFor(l);
   var days={};l.forEach(function(s){days[s.date]=1});
   $("mlabel").textContent=monthStart.toLocaleDateString(undefined,{month:"long",year:"numeric"});
-  $("mbody").innerHTML='<div class="total"><div class="big">'+fmt(tot)+'</div><div class="sub">'+Object.keys(days).length+' days worked'+(pv>0?' · €'+pv.toFixed(2):'')+'</div></div>';
+  $("mbody").innerHTML='<div class="total"><div class="big">'+fmt(tot)+'</div><div class="sub">'+Object.keys(days).length+' days worked'+(pv>0?' · €'+pv.toFixed(2):'')+'</div></div>'+monthWeeks(l);
 }
 $("mprev").onclick=function(){monthStart=new Date(monthStart.getFullYear(),monthStart.getMonth()-1,1);renderMonth()};
 $("mnext").onclick=function(){monthStart=new Date(monthStart.getFullYear(),monthStart.getMonth()+1,1);renderMonth()};
