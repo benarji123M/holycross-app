@@ -811,6 +811,7 @@ html.swp,html.swp body{overflow-x:hidden}
 .pcsh span{display:block;font-size:14px;font-weight:700;margin-top:4px;overflow-wrap:anywhere}
 .pcdt{position:relative;margin-top:12px;font-size:13px;font-weight:700;color:rgba(255,255,255,.85)}
 @media (max-width:360px){.pcsh{grid-template-columns:1fr}}
+.nyw{border-color:#d9534f!important;background:rgba(217,83,79,.08)}.nyw small{opacity:.8}
 </style>
 </head>
 <body>
@@ -4045,6 +4046,45 @@ function byGroup(c){
   return h+gCard("🧮 All together",loans.given,loans.taken,c,"Everything in one place: Friends, Home, Bank and Other added up.");
 }
 (function(){var _mo=mOver;mOver=function(c){return _mo(c)+byGroup(c)};renderMoney()})();
+
+/* ---- v64: Home notary paper 3-year warnings ---- */
+function nyExp(L){var a=String(L.date).split("-");if(a.length<3)return null;return new Date(+a[0]+3,+a[1]-1,+a[2])}
+function nyInfo(L,k){
+  if(L.done||gOf(k,L)!=="home")return null;var e=nyExp(L);if(!e)return null;
+  var t=new Date();t=new Date(t.getFullYear(),t.getMonth(),t.getDate());var d=Math.round((e-t)/864e5),st=null;
+  if(d<0)st=0;else if(d<=31)st=1;else if(d<=92)st=3;else if(d<=183)st=6;
+  return{exp:e,days:d,st:st};
+}
+function nyTxt(i){
+  if(i.days<0)return"ENDED "+(-i.days)+" days ago";
+  var m=Math.floor(i.days/30.4);return i.days<=31?i.days+" days left":m+" months left";
+}
+function nyDis(id,st){try{return localStorage.getItem("hc_nw_"+id+"_"+st)==="1"}catch(e){return false}}
+function nyBanner(){
+  var items=[];
+  ["given","taken"].forEach(function(k){loans[k].forEach(function(L){var i=nyInfo(L,k);if(i&&i.st!==null&&!nyDis(L.id,i.st))items.push({L:L,i:i})})});
+  if(!items.length)return"";
+  items.sort(function(a,b){return a.i.days-b.i.days});
+  var lab={0:"ENDED",1:"1 month warning",3:"3 months warning",6:"6 months warning"};
+  return'<div class="mcard nyw"><h2>⚠️ Notary paper warning</h2><p class="mnote" style="margin:0 0 8px">These Home papers end 3 years after the date. Make a new paper before they end.</p>'+
+    items.map(function(x){return'<div class="rd"><span><b>'+lesc(x.L.name)+"</b> · "+money(x.L.p,x.L.cur)+"<br><small>"+lab[x.i.st]+" · ends "+fdate(x.i.exp.getFullYear()+"-"+(x.i.exp.getMonth()+1)+"-"+x.i.exp.getDate())+'</small></span><b class="rr">'+nyTxt(x.i)+"</b></div>"}).join("")+
+    '<button class="add ghost" data-a="nydis" style="margin-top:10px">OK, I saw it</button></div>';
+}
+(function(){
+  var _mo2=mOver;mOver=function(c){return nyBanner()+_mo2(c)};
+  var _ml=mLoans;mLoans=function(k,c){return(k==="given"?nyBanner():"")+_ml(k,c)};
+  var _mr=mRow;mRow=function(k,L){
+    var h=_mr(k,L),i=nyInfo(L,k);if(!i)return h;
+    if(i.st!==null)h=h.replace("</small>",' · ⚠️ paper '+(i.days<0?"ended":"ends soon")+"</small>");
+    return h.replace('<div class="rd"><span>Interest rate</span>','<div class="rd"><span>Notary paper ends</span><b class="'+(i.st!==null?"rr":"")+'">'+fdate(i.exp.getFullYear()+"-"+(i.exp.getMonth()+1)+"-"+i.exp.getDate())+" ("+nyTxt(i)+')</b></div><div class="rd"><span>Interest rate</span>');
+  };
+  document.addEventListener("click",function(e){
+    var b=e.target.closest&&e.target.closest('[data-a="nydis"]');if(!b)return;
+    ["given","taken"].forEach(function(k){loans[k].forEach(function(L){var i=nyInfo(L,k);if(i&&i.st!==null){try{localStorage.setItem("hc_nw_"+L.id+"_"+i.st,"1")}catch(x){}}})});
+    renderMoney();toast("OK. I will warn you again at the next step.");
+  },true);
+  renderMoney();
+})();
 var HASH="ce43ef7ac0487be787746eebe94f8648e87cd92c64b4d2762ed1fbe1b42a6ceb", AUTH="hours_auth_v1";
 function sha(t){
   return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){
@@ -4487,7 +4527,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v63 · 11 Nov 2026";
+var APPV="v64 · 21 Nov 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
