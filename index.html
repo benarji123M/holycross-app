@@ -4085,6 +4085,24 @@ function nyBanner(){
   },true);
   renderMoney();
 })();
+
+/* ---- v65: paste many loans at once (private import) ---- */
+function impBox(){
+  return'<details class="mcard" id="impd"><summary style="font-weight:800;cursor:pointer">📥 Add many loans (paste)</summary><p class="mnote" style="margin:8px 0">Paste the loans text I sent you. Loans already in the app are not added twice.</p><textarea class="tb" id="impt" placeholder="Paste loans text here" style="width:100%;min-height:90px"></textarea><button class="add" data-a="impgo" style="margin-top:8px">Add these loans</button></details>';
+}
+(function(){
+  var _ml2=mLoans;mLoans=function(k,c){var h=_ml2(k,c);return k==="given"?h+impBox():h};
+  document.addEventListener("click",function(e){
+    var b=e.target.closest&&e.target.closest('[data-a="impgo"]');if(!b)return;e.stopPropagation();
+    var t=($("impt")||{}).value||"",D;
+    try{D=JSON.parse(t.trim())}catch(x){toast("I cannot read this text. Copy all of it and try again.");return}
+    if(!Array.isArray(D)){toast("This text is not a loans list.");return}
+    var have={};loans.given.forEach(function(x){have[x.id]=1});var n=0;
+    D.forEach(function(x){if(x&&x.id&&x.name&&x.p&&!have[x.id]){loans.given.push({id:String(x.id),name:String(x.name),p:+x.p,rate:+x.rate||0,per:x.per==="y"?"y":"m",cur:x.cur==="EUR"?"EUR":"INR",date:String(x.date||""),note:String(x.note||""),grp:GRP[x.grp]?x.grp:"home",done:false});n++}});
+    saveLoans();renderMoney();toast(n+" loans added.");
+  },true);
+  renderMoney();
+})();
 var HASH="ce43ef7ac0487be787746eebe94f8648e87cd92c64b4d2762ed1fbe1b42a6ceb", AUTH="hours_auth_v1";
 function sha(t){
   return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){
@@ -4527,7 +4545,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v64 · 21 Nov 2026";
+var APPV="v65 · 21 Nov 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */

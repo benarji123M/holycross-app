@@ -1,4 +1,4 @@
-var C="holycross-v69";
+var C="holycross-v70";
 var FILES=["./","index.html","manifest.webmanifest","icon-192.png","icon-512.png","apple-touch-icon.png"];
 self.addEventListener("install",function(e){
   self.skipWaiting();
