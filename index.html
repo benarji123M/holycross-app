@@ -812,6 +812,44 @@ html.swp,html.swp body{overflow-x:hidden}
 .pcdt{position:relative;margin-top:12px;font-size:13px;font-weight:700;color:rgba(255,255,255,.85)}
 @media (max-width:360px){.pcsh{grid-template-columns:1fr}}
 .nyw{border-color:#d9534f!important;background:rgba(217,83,79,.08)}.nyw small{opacity:.8}
+
+/* ---- v66: clearer buttons + newer look ---- */
+:root:root .add.ghost{background:var(--card);color:var(--tx);border:2px solid var(--bd);font-weight:800}
+:root:root .btns .add.ghost[data-a="edit"]{color:#1d4ed8;border-color:#1d4ed8;background:rgba(29,78,216,.08)}
+:root:root .btns .add.ghost[data-a="done"]{color:#15803d;border-color:#15803d;background:rgba(21,128,61,.08)}
+:root:root .btns .add.ghost[data-a="del"]{color:#b91c1c;border-color:#b91c1c;background:rgba(185,28,28,.08)}
+:root[data-theme="dark"] .btns .add.ghost[data-a="edit"]{color:#93c5fd;border-color:#60a5fa;background:rgba(96,165,250,.14)}
+:root[data-theme="dark"] .btns .add.ghost[data-a="done"]{color:#86efac;border-color:#4ade80;background:rgba(74,222,128,.14)}
+:root[data-theme="dark"] .btns .add.ghost[data-a="del"]{color:#fca5a5;border-color:#f87171;background:rgba(248,113,113,.14)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btns .add.ghost[data-a="edit"]{color:#93c5fd;border-color:#60a5fa;background:rgba(96,165,250,.14)}
+:root:not([data-theme="light"]) .btns .add.ghost[data-a="done"]{color:#86efac;border-color:#4ade80;background:rgba(74,222,128,.14)}
+:root:not([data-theme="light"]) .btns .add.ghost[data-a="del"]{color:#fca5a5;border-color:#f87171;background:rgba(248,113,113,.14)}
+:root:not([data-theme="light"]) .add.ghost{color:var(--tx)}}
+.ldet .btns .add{margin-top:0;padding:11px 8px;border-radius:12px;font-size:15px}
+.lrow{border-radius:18px;box-shadow:0 1px 2px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.05);border-color:transparent}
+.lrow.lg{border-left:4px solid #16a34a}.lrow.lt{border-left:4px solid #dc2626}
+.lhead{padding:14px}
+.lm b{font-size:16px;letter-spacing:-.1px}
+.lr b{font-size:17px;font-weight:800}
+.mtile{border-radius:16px;box-shadow:0 1px 2px rgba(16,24,40,.06);border-color:transparent}
+.mtile b{font-size:17px;font-weight:800}
+.mcard{border-radius:18px;box-shadow:0 1px 2px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.05);border-color:transparent}
+.gsec{background:linear-gradient(90deg,rgba(31,58,95,.12),transparent);border:0;border-left:4px solid var(--ac);border-radius:10px}
+.pblk{background:var(--card);border-radius:20px;margin:0 0 14px;padding:10px;box-shadow:0 2px 4px rgba(16,24,40,.07),0 8px 22px rgba(16,24,40,.07);border:1px solid var(--bd)}
+.phd{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;color:var(--tx);text-align:left;padding:4px 4px 8px;font-family:inherit;cursor:pointer}
+.phd .lm b{font-size:18px;font-weight:800}
+.pch{flex:none;font-size:18px;color:var(--mu)}
+.pst{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 10px}
+.pst div{background:var(--bg);border-radius:14px;padding:10px 9px;min-width:0}
+.pst small{display:block;font-size:10.5px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:2px}
+.pst b{font-size:15.5px;font-weight:800;font-variant-numeric:tabular-nums;word-break:break-word}
+.pst div:last-child{background:var(--ac)}.pst div:last-child small,.pst div:last-child b{color:#fff}
+:root[data-theme="dark"] .pst div:last-child small,:root[data-theme="dark"] .pst div:last-child b{color:#0b1220}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pst div:last-child small,:root:not([data-theme="light"]) .pst div:last-child b{color:#0b1220}}
+.pin{display:flex;flex-direction:column;gap:8px}
+.pin .lrow{margin:0;box-shadow:none;border:1px solid var(--bd);border-left-width:4px;border-radius:14px;background:var(--bg)}
+.pin .av2{display:none}.pin .lm b{display:none}
+.pin .lm small{font-size:13px;white-space:normal;color:var(--tx);font-weight:600}
 </style>
 </head>
 <body>
@@ -2881,9 +2919,9 @@ function mLoans(k,c){
       var items=act.concat(dn).filter(function(x){return gOf(k,x)===g});if(!items.length)return;
       var gp=mTot(items,c,function(x){return parseFloat(x.p)||0}),gi=mTot(items,c,function(x){return calcLoan(x).int});
       h+='<div class="gsec"><b>'+GRP[g][0]+" "+GRP[g][1]+"</b><span>Interest "+money(gi,c)+" · Total <b>"+money(gp+gi,c)+"</b></span></div>";
-      items.forEach(function(L){h+=mRow(k,L)});
+      h+=pBlocks(k,c,items);
     });
-  }else act.concat(dn).forEach(function(L){h+=mRow(k,L)});
+  }else h+=pBlocks(k,c,act.concat(dn));
   return h;
 }
 function mRow(k,L){
@@ -4103,6 +4141,31 @@ function impBox(){
   },true);
   renderMoney();
 })();
+
+/* ---- v66: people blocks (same name together) ---- */
+MS.pc=MS.pc||{};
+function pKey(n){return String(n).toLowerCase().replace(/[^a-z0-9ఀ-౿]/g,"")}
+function pBlocks(k,c,items){
+  var map={},ord=[];
+  items.forEach(function(L){var key=pKey(L.name);if(!map[key]){map[key]={key:key,name:L.name,list:[]};ord.push(map[key])}map[key].list.push(L)});
+  ord.sort(function(a,b){return a.name.toLowerCase()<b.name.toLowerCase()?-1:1});
+  var give=k==="given",h="";
+  ord.forEach(function(P){
+    P.list.sort(function(a,b){return String(a.date)<String(b.date)?-1:1});
+    if(P.list.length===1){h+=mRow(k,P.list[0]);return}
+    var p=mTot(P.list,c,function(x){return parseFloat(x.p)||0}),i=mTot(P.list,c,function(x){return calcLoan(x).int}),shut=!!MS.pc[k+P.key];
+    h+='<div class="pblk"><button type="button" class="phd" data-a="pc" data-id="'+lesc(k+P.key)+'" aria-expanded="'+(!shut)+'"><span class="av2">'+lesc(ini(P.name))+'</span><span class="lm"><b>'+lesc(P.name)+'</b><small>'+P.list.length+' loans · tap to '+(shut?"open":"close")+'</small></span><span class="pch">'+(shut?"▾":"▴")+'</span></button>'+
+      '<div class="pst"><div><small>'+(give?"Given":"Taken")+'</small><b>'+money(p,c)+'</b></div><div><small>Interest</small><b class="'+(give?"gg":"rr")+'">'+money(i,c)+'</b></div><div><small>'+(give?"Get back":"Pay back")+'</small><b>'+money(p+i,c)+'</b></div></div>'+
+      (shut?"":'<div class="pin">'+P.list.map(function(L){return mRow(k,L)}).join("")+"</div>")+"</div>";
+  });
+  return h;
+}
+(function(){
+  document.addEventListener("click",function(e){
+    var b=e.target.closest&&e.target.closest('[data-a="pc"]');if(!b)return;e.stopPropagation();
+    var id=b.getAttribute("data-id");MS.pc[id]=!MS.pc[id];renderMoney();
+  },true);
+})();
 var HASH="ce43ef7ac0487be787746eebe94f8648e87cd92c64b4d2762ed1fbe1b42a6ceb", AUTH="hours_auth_v1";
 function sha(t){
   return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){
@@ -4545,7 +4608,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v65 · 21 Nov 2026";
+var APPV="v66 · 21 Nov 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
