@@ -923,6 +923,18 @@ html.swp,html.swp body{overflow-x:hidden}
 .pdl i{width:12px;height:12px;border-radius:4px;flex:none}
 .pdl span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pdl b{font-variant-numeric:tabular-nums}
+
+/* ---- v72 ---- */
+.lgd{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 12px}
+.lgd div{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:9px 8px;text-align:center}
+.lgd b{display:block;font-size:13.5px}.lgd span{display:block;font-size:11.5px;color:var(--mu);margin-top:2px}
+.more summary{font-weight:800;font-size:15px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.more summary::after{content:"▾";color:var(--mu)}
+.more[open] summary::after{content:"▴"}
+.morei{margin-top:12px}.morei .mcard:last-child{margin-bottom:0}
+.hdash{border-radius:24px}
+.hd-big{font-size:clamp(34px,10vw,46px)}
+.mcard h2{font-size:16px}
 </style>
 </head>
 <body>
@@ -4413,6 +4425,26 @@ function sumText(c){
   },true);
   renderMoney();
 })();
+
+/* ---- v72: simple overview (ask first, plain legend, more numbers folded) ---- */
+function askCard(c){
+  var L=homeActive(c).slice().sort(function(a,b){return String(a.date)<String(b.date)?-1:1}).slice(0,5);if(!L.length)return"";
+  return'<div class="mcard"><h2>🙋 Ask these first</h2><p class="mnote" style="margin:0 0 8px">These loans are the oldest. The money is out the longest.</p>'+
+    L.map(function(x){var sp=lspan(x.date),t=sp.m>=12?Math.floor(sp.m/12)+" yr "+(sp.m%12)+" mo":sp.m+" months";
+      return'<div class="rd"><span><b>'+lesc(x.name)+'</b><br><small>'+money(x.p,x.cur)+' · '+fdate(x.date)+' · '+t+' ago</small></span><b>'+money(balOf(x),x.cur)+'</b></div>'}).join("")+"</div>";
+}
+function legendCard(){
+  return'<div class="lgd"><div><b>I gave</b><span>money I lent</span></div><div><b>Interest</b><span>grows by itself</span></div><div><b>I get back</b><span>I gave + interest</span></div></div>';
+}
+(function(){
+  var _ov2=mOver;mOver=function(c){
+    var hc=homeCard(c),full=_ov2(c);if(!hc||full.indexOf(hc)!==0)return full;
+    var rest=full.slice(hc.length),nb=nyBanner();if(nb&&rest.indexOf(nb)===0)rest=rest.slice(nb.length);else nb="";
+    var parts=hc.split('<div class="mcard">'),first=parts.shift();
+    return nb+first+legendCard()+askCard(c)+(parts.length?'<div class="mcard">'+parts.join('<div class="mcard">'):"")+'<details class="mcard more"><summary>📊 More numbers (all groups)</summary><div class="morei">'+rest+"</div></details>";
+  };
+  renderMoney();
+})();
 var HASH="ce43ef7ac0487be787746eebe94f8648e87cd92c64b4d2762ed1fbe1b42a6ceb", AUTH="hours_auth_v1";
 function sha(t){
   return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){
@@ -4855,7 +4887,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v71 · 23 Nov 2026";
+var APPV="v72 · 23 Nov 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
