@@ -873,6 +873,15 @@ html.swp,html.swp body{overflow-x:hidden}
 .lss button.on{background:var(--ac);border-color:var(--ac);color:#fff}
 :root[data-theme="dark"] .lss button.on{color:#0b1220}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lss button.on{color:#0b1220}}
+
+/* ---- v68 ---- */
+.payb{margin-top:10px;padding:10px;border-radius:14px;background:var(--bg);border:1px dashed var(--bd)}
+.payf{display:grid;gap:8px;margin-top:8px}
+.payf input{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:2px solid var(--bd);background:var(--card);color:var(--tx);font-size:16px;font-family:inherit}
+.pdx{border:0;background:rgba(185,28,28,.12);color:#b91c1c;border-radius:99px;width:26px;height:26px;font-weight:800;cursor:pointer;margin-left:6px}
+:root[data-theme="dark"] .pdx{color:#fca5a5}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pdx{color:#fca5a5}}
+.pmsg{margin-top:2px}
 </style>
 </head>
 <body>
@@ -4178,7 +4187,7 @@ function pBlocks(k,c,items){
     if(P.list.length===1){h+=mRow(k,P.list[0]);return}
     var p=mTot(P.list,c,function(x){return parseFloat(x.p)||0}),i=mTot(P.list,c,function(x){return calcLoan(x).int}),shut=!!MS.pc[k+P.key];
     h+='<div class="pblk"><button type="button" class="phd" data-a="pc" data-id="'+lesc(k+P.key)+'" aria-expanded="'+(!shut)+'"><span class="av2">'+lesc(ini(P.name))+'</span><span class="lm"><b>'+lesc(P.name)+'</b><small>'+P.list.length+' loans · tap to '+(shut?"open":"close")+'</small></span><span class="pch">'+(shut?"▾":"▴")+'</span></button>'+
-      '<div class="pst"><div><small>'+(give?"Given":"Taken")+'</small><b>'+money(p,c)+'</b></div><div><small>Interest</small><b class="'+(give?"gg":"rr")+'">'+money(i,c)+'</b></div><div><small>'+(give?"Get back":"Pay back")+'</small><b>'+money(p+i,c)+'</b></div></div>'+
+      (give?'<button type="button" class="add ghost pmsg" data-a="pmsg" data-key="'+P.key+'" style="margin:0 0 8px">📲 Copy reminder for '+lesc(P.name.split(" ")[0])+'</button>':"")+'<div class="pst"><div><small>'+(give?"Given":"Taken")+'</small><b>'+money(p,c)+'</b></div><div><small>Interest</small><b class="'+(give?"gg":"rr")+'">'+money(i,c)+'</b></div><div><small>'+(give?"Get back":"Pay back")+'</small><b>'+money(p+i,c)+'</b></div></div>'+
       (shut?"":'<div class="pin">'+P.list.map(function(L){return mRow(k,L)}).join("")+"</div>")+"</div>";
   });
   return h;
@@ -4231,6 +4240,53 @@ function lsBar(){
   });
   document.addEventListener("click",function(e){
     var b=e.target.closest&&e.target.closest('[data-a="srt"]');if(!b)return;e.stopPropagation();MS.srt=b.getAttribute("data-v");renderMoney();
+  },true);
+  renderMoney();
+})();
+
+/* ---- v68: payments received + message copy ---- */
+MS.pf=MS.pf||null;
+function rcv(L){return(L.pay||[]).reduce(function(t,x){return t+(parseFloat(x.a)||0)},0)}
+function balOf(L){return calcLoan(L).tot-rcv(L)}
+function remText(list,k){
+  var nm=list[0].name,c=list[0].cur,lines=[],tot=0,rc=0;
+  list.forEach(function(L){var q=calcLoan(L);tot+=q.tot;rc+=rcv(L);lines.push("• "+money(L.p,L.cur)+" ("+fdate(L.date)+") + interest "+money(q.int,L.cur))});
+  return"Hi "+nm.split(" ")[0]+", this is a friendly reminder.\n"+lines.join("\n")+"\nTotal until today: "+money(tot,c)+(rc?"\nReceived: "+money(rc,c)+"\nBalance: "+money(tot-rc,c):"")+"\nThank you.";
+}
+function copyTxt(t){
+  function fb(){var a=document.createElement("textarea");a.value=t;a.style.cssText="position:fixed;opacity:0";document.body.appendChild(a);a.select();try{document.execCommand("copy");toast("Message copied. Paste it in WhatsApp.")}catch(e){toast("Could not copy")}a.remove()}
+  try{navigator.clipboard.writeText(t).then(function(){toast("Message copied. Paste it in WhatsApp.")},fb)}catch(e){fb()}
+}
+(function(){
+  var _mr3=mRow;mRow=function(k,L){
+    var h=_mr3(k,L),r=rcv(L);
+    if(r>0){var q=calcLoan(L);h=h.replace('<span class="lr"><b>'+money(q.tot,L.cur)+"</b>",'<span class="lr"><b>'+money(q.tot-r,L.cur)+"</b>");h=h.replace('+ '+money(q.int,L.cur)+" interest",'received '+money(r,L.cur))}
+    if(MS.open!==L.id)return h;
+    var pay=(L.pay||[]),ph='<div class="payb"><div class="rd"><span class="w">💵 Money received</span><b>'+money(r,L.cur)+'</b></div>';
+    pay.forEach(function(x,i){ph+='<div class="rd"><span>'+fdate(x.d)+'</span><span>'+money(x.a,L.cur)+' <button type="button" class="pdx" data-a="paydel" data-id="'+L.id+'" data-i="'+i+'" aria-label="Remove">✕</button></span></div>'});
+    if(r>0)ph+='<div class="rd"><span class="w">Balance still to get</span><b class="gg">'+money(calcLoan(L).tot-r,L.cur)+'</b></div>';
+    ph+=MS.pf===L.id?'<div class="payf"><input id="pya" type="number" inputmode="decimal" placeholder="Amount received"><input id="pyd" type="date" value="'+isoNow()+'"><button class="add" data-a="payok" data-id="'+L.id+'" style="margin:0">Save payment</button></div>':'<button class="add ghost" data-a="payform" data-id="'+L.id+'" style="margin-top:8px">+ Add money received</button>';
+    ph+='<button class="add ghost" data-a="msg" data-id="'+L.id+'" style="margin-top:8px">📲 Copy reminder message</button></div>';
+    return h.replace('<div class="btns" style="margin-top:10px">',ph+'<div class="btns" style="margin-top:10px">');
+  };
+  var _pb2=pBlocks;pBlocks=function(k,c,items){
+    var h=_pb2(k,c,items);
+    return h.replace(/<div class="pst">([\s\S]*?)<\/div><\/div><\/div>/g,function(m){return m});
+  };
+  var _hc=homeCard;homeCard=function(c){
+    var h=_hc(c),r=0;loans.given.forEach(function(L){if(gOf("given",L)==="home"&&!L.done&&L.cur===c)r+=rcv(L)});
+    if(r>0)h=h.replace('<div class="hd-sub">you will get back today</div>','<div class="hd-sub">still to get back · received so far '+money(r,c)+"</div>").replace(/<div class="hd-big">([^<]*)<\/div>/,function(m,v){var tot=0;loans.given.forEach(function(L){if(gOf("given",L)==="home"&&!L.done&&L.cur===c)tot+=balOf(L)});return'<div class="hd-big">'+money(tot,c)+"</div>"});
+    return h;
+  };
+  document.addEventListener("click",function(e){
+    var b=e.target.closest&&e.target.closest("[data-a]");if(!b)return;var a=b.getAttribute("data-a"),id=b.getAttribute("data-id");
+    if(["payform","payok","paydel","msg","pmsg"].indexOf(a)<0)return;e.stopPropagation();
+    var L=null;loans.given.forEach(function(x){if(x.id===id)L=x});
+    if(a==="payform"){MS.pf=id;renderMoney()}
+    else if(a==="payok"&&L){var v=parseFloat(($("pya")||{}).value),d=($("pyd")||{}).value||isoNow();if(!(v>0)){toast("Write the amount first.");return}(L.pay=L.pay||[]).push({d:d,a:v});MS.pf=null;saveLoans();renderMoney();toast("Payment saved.")}
+    else if(a==="paydel"&&L){L.pay.splice(+b.getAttribute("data-i"),1);saveLoans();renderMoney()}
+    else if(a==="msg"&&L)copyTxt(remText([L],"given"));
+    else if(a==="pmsg"){var key=b.getAttribute("data-key"),ls=loans.given.filter(function(x){return pKey(x.name)===key&&!x.done});if(ls.length)copyTxt(remText(ls,"given"))}
   },true);
   renderMoney();
 })();
@@ -4676,7 +4732,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v67 · 23 Nov 2026";
+var APPV="v68 · 23 Nov 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
