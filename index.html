@@ -4251,7 +4251,7 @@ function homeCard(c){
   var ex=[];loans.given.forEach(function(L){var q=nyInfo(L,"given");if(q&&L.cur===c)ex.push({L:L,q:q})});ex.sort(function(a,b){return a.q.days-b.q.days});ex=ex.slice(0,4);
   var h='<div class="hdash"><div class="hd-top"><span>🏠 Home loans</span><small>'+arr.length+' people · '+H.length+' loans</small></div>'+
     '<div class="hd-big">'+money(p+i,c)+'</div><div class="hd-sub">you will get back today</div>'+
-    '<div class="hd-row"><div><small>Given</small><b>'+money(p,c)+'</b></div><div><small>Interest</small><b>'+money(i,c)+'</b></div><div><small>Every month</small><b>+ '+money(mo,c)+'</b></div></div></div>';
+    '<div class="hd-row"><div><small>Given</small><b>'+money(p,c)+'</b></div><div><small>Interest</small><b>'+money(i,c)+'</b></div><div><small>Grows each month</small><b>+ '+money(mo,c)+'</b></div></div></div>';
   h+='<div class="mcard"><h2>👥 Biggest people</h2>'+top.map(function(x){return'<div class="tp"><div class="tpl"><b>'+lesc(x.n)+'</b><span>'+money(x.t,c)+'</span></div><div class="bar2"><i style="width:'+(x.t/mx*100).toFixed(1)+'%;background:var(--ac)"></i></div><small>'+x.c+(x.c>1?" loans":" loan")+'</small></div>'}).join("")+'</div>';
   if(ex.length)h+='<div class="mcard"><h2>📜 Papers ending first</h2>'+ex.map(function(x){var e=x.q.exp;return'<div class="rd"><span><b>'+lesc(x.L.name)+'</b><br><small>'+money(x.L.p,x.L.cur)+' · ends '+fdate(e.getFullYear()+"-"+(e.getMonth()+1)+"-"+e.getDate())+'</small></span><b class="'+(x.q.st!==null?"rr":"")+'">'+nyTxt(x.q)+'</b></div>'}).join("")+'</div>';
   return h;
@@ -4400,7 +4400,7 @@ function sumText(c){
 (function(){
   var _hc2=homeCard;homeCard=function(c){
     var h=_hc2(c);if(!h)return h;
-    return h+colCard(c)+shareCard(c)+'<button class="add ghost" data-a="sumcopy" style="margin:0 0 12px">📋 Copy Home summary</button>';
+    return h+shareCard(c)+'<button class="add ghost" data-a="sumcopy" style="margin:0 0 12px">📋 Copy Home summary</button>';
   };
   document.addEventListener("click",function(e){
     var b=e.target.closest&&e.target.closest("[data-a]");if(!b)return;var a=b.getAttribute("data-a");
@@ -4855,7 +4855,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v70 · 23 Nov 2026";
+var APPV="v71 · 23 Nov 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
