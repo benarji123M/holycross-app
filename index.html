@@ -850,6 +850,29 @@ html.swp,html.swp body{overflow-x:hidden}
 .pin .lrow{margin:0;box-shadow:none;border:1px solid var(--bd);border-left-width:4px;border-radius:14px;background:var(--bg)}
 .pin .av2{display:none}.pin .lm b{display:none}
 .pin .lm small{font-size:13px;white-space:normal;color:var(--tx);font-weight:600}
+
+/* ---- v67 ---- */
+.hdash{background:linear-gradient(135deg,#0f766e,#1f3a5f 70%);color:#fff;border-radius:22px;padding:16px;margin-bottom:12px;box-shadow:0 8px 24px rgba(15,118,110,.25)}
+.hd-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:800;font-size:15px}
+.hd-top small{font-size:12px;opacity:.85;font-weight:700}
+.hd-big{font-size:clamp(30px,9vw,42px);font-weight:900;margin:8px 0 0;font-variant-numeric:tabular-nums;line-height:1.1;letter-spacing:-.5px}
+.hd-sub{font-size:13px;opacity:.9}
+.hd-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
+.hd-row div{background:rgba(255,255,255,.15);border-radius:14px;padding:10px 9px;min-width:0}
+.hd-row small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;opacity:.9;font-weight:700}
+.hd-row b{font-size:15px;font-variant-numeric:tabular-nums;word-break:break-word}
+.tp{margin-bottom:10px}.tp:last-child{margin-bottom:0}
+.tpl{display:flex;justify-content:space-between;gap:8px;font-size:14px;margin-bottom:4px}
+.tpl span{font-weight:800;font-variant-numeric:tabular-nums;flex:none}
+.tp small{color:var(--mu);font-size:12px}
+.lsb{padding:2px 0 8px;margin-bottom:6px}.tp .bar2{margin:0 0 4px}
+.lsb input{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:2px solid var(--bd);background:var(--card);color:var(--tx);font-size:16px;font-family:inherit}
+.lsb input:focus{outline:0;border-color:var(--ac)}
+.lss{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding-bottom:2px}
+.lss button{flex:none;border:2px solid var(--bd);background:var(--card);color:var(--tx);border-radius:99px;padding:7px 13px;font-weight:800;font-size:13.5px;font-family:inherit;cursor:pointer}
+.lss button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+:root[data-theme="dark"] .lss button.on{color:#0b1220}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lss button.on{color:#0b1220}}
 </style>
 </head>
 <body>
@@ -4166,6 +4189,51 @@ function pBlocks(k,c,items){
     var id=b.getAttribute("data-id");MS.pc[id]=!MS.pc[id];renderMoney();
   },true);
 })();
+
+/* ---- v67: Money Home dashboard, search, sort, monthly interest ---- */
+MS.q=MS.q||"";MS.srt=MS.srt||"az";
+function mInt(L){var p=parseFloat(L.p)||0,r=parseFloat(L.rate)||0;return p*r/100/(L.per==="y"?12:1)}
+function homeCard(c){
+  var H=loans.given.filter(function(x){return gOf("given",x)==="home"&&!x.done&&x.cur===c});if(!H.length)return"";
+  var p=0,i=0,mo=0,ppl={};
+  H.forEach(function(L){p+=parseFloat(L.p)||0;i+=calcLoan(L).int;mo+=mInt(L);var k=pKey(L.name);ppl[k]=ppl[k]||{n:L.name,t:0,c:0};ppl[k].t+=(parseFloat(L.p)||0)+calcLoan(L).int;ppl[k].c++});
+  var arr=Object.keys(ppl).map(function(k){return ppl[k]}).sort(function(a,b){return b.t-a.t}),top=arr.slice(0,5),mx=top.length?top[0].t:1;
+  var ex=[];loans.given.forEach(function(L){var q=nyInfo(L,"given");if(q&&L.cur===c)ex.push({L:L,q:q})});ex.sort(function(a,b){return a.q.days-b.q.days});ex=ex.slice(0,4);
+  var h='<div class="hdash"><div class="hd-top"><span>🏠 Home loans</span><small>'+arr.length+' people · '+H.length+' loans</small></div>'+
+    '<div class="hd-big">'+money(p+i,c)+'</div><div class="hd-sub">you will get back today</div>'+
+    '<div class="hd-row"><div><small>Given</small><b>'+money(p,c)+'</b></div><div><small>Interest</small><b>'+money(i,c)+'</b></div><div><small>Every month</small><b>+ '+money(mo,c)+'</b></div></div></div>';
+  h+='<div class="mcard"><h2>👥 Biggest people</h2>'+top.map(function(x){return'<div class="tp"><div class="tpl"><b>'+lesc(x.n)+'</b><span>'+money(x.t,c)+'</span></div><div class="bar2"><i style="width:'+(x.t/mx*100).toFixed(1)+'%;background:var(--ac)"></i></div><small>'+x.c+(x.c>1?" loans":" loan")+'</small></div>'}).join("")+'</div>';
+  if(ex.length)h+='<div class="mcard"><h2>📜 Papers ending first</h2>'+ex.map(function(x){var e=x.q.exp;return'<div class="rd"><span><b>'+lesc(x.L.name)+'</b><br><small>'+money(x.L.p,x.L.cur)+' · ends '+fdate(e.getFullYear()+"-"+(e.getMonth()+1)+"-"+e.getDate())+'</small></span><b class="'+(x.q.st!==null?"rr":"")+'">'+nyTxt(x.q)+'</b></div>'}).join("")+'</div>';
+  return h;
+}
+function lsBar(){
+  var S=[["az","A–Z"],["big","Biggest"],["old","Oldest"],["exp","Paper ends first"]];
+  return'<div class="lsb"><input id="lsq" type="search" placeholder="🔍 Search a name" value="'+lesc(MS.q)+'" autocomplete="off"><div class="lss">'+S.map(function(s){return'<button type="button" class="'+(MS.srt===s[0]?"on":"")+'" data-a="srt" data-v="'+s[0]+'">'+s[1]+'</button>'}).join("")+"</div></div>";
+}
+(function(){
+  var _ov=mOver;mOver=function(c){return homeCard(c)+_ov(c)};
+  var _ml3=mLoans;mLoans=function(k,c){var h=_ml3(k,c);return k==="given"?lsBar()+h:h};
+  var _pb=pBlocks;pBlocks=function(k,c,items){
+    var q=pKey(MS.q||"");if(q)items=items.filter(function(L){return pKey(L.name).indexOf(q)>=0});
+    if(!items.length)return'<div class="mcard"><p class="mnote" style="margin:0">Nobody found. Try another name.</p></div>';
+    var sr=MS.srt||"az";if(k!=="given")sr="az";
+    var map={};items.forEach(function(L){var key=pKey(L.name);(map[key]=map[key]||[]).push(L)});
+    var keys=Object.keys(map),tot=function(a){return a.reduce(function(t,x){return t+(parseFloat(x.p)||0)+calcLoan(x).int},0)},
+        old=function(a){return a.reduce(function(m,x){return String(x.date)<m?String(x.date):m},"9999")},
+        ex=function(a){return a.reduce(function(m,x){var i=nyInfo(x,k);return i&&i.days<m?i.days:m},1e9)};
+    keys.sort(function(a,b){var A=map[a],B=map[b];
+      if(sr==="big")return tot(B)-tot(A);if(sr==="old")return old(A)<old(B)?-1:1;if(sr==="exp")return ex(A)-ex(B);
+      return A[0].name.toLowerCase()<B[0].name.toLowerCase()?-1:1});
+    var out="";keys.forEach(function(key){out+=_pb(k,c,map[key])});return out;
+  };
+  document.addEventListener("input",function(e){
+    if(e.target&&e.target.id==="lsq"){MS.q=e.target.value;var pos=e.target.selectionStart;renderMoney();var n=$("lsq");if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(x){}}}
+  });
+  document.addEventListener("click",function(e){
+    var b=e.target.closest&&e.target.closest('[data-a="srt"]');if(!b)return;e.stopPropagation();MS.srt=b.getAttribute("data-v");renderMoney();
+  },true);
+  renderMoney();
+})();
 var HASH="ce43ef7ac0487be787746eebe94f8648e87cd92c64b4d2762ed1fbe1b42a6ceb", AUTH="hours_auth_v1";
 function sha(t){
   return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){
@@ -4608,7 +4676,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v66 · 21 Nov 2026";
+var APPV="v67 · 23 Nov 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
