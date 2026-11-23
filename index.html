@@ -908,6 +908,21 @@ html.swp,html.swp body{overflow-x:hidden}
 .pin .lrow{border-left-width:0}
 .pin .lh2 .lm .lpr{font-size:16px}
 .ldet .rd{padding:10px 0}
+
+/* ---- v70 ---- */
+.cr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.cr:last-of-type{border-bottom:0}
+.crn{min-width:0}.crn b{display:block;font-size:15px}.crn small{color:var(--mu);font-size:12.5px}
+.crb{flex:none;border:2px solid var(--ac);background:transparent;color:var(--ac);border-radius:12px;padding:9px 12px;font-weight:800;font-size:14px;font-family:inherit;cursor:pointer}
+.cr.cdn .crb{background:#16a34a;border-color:#16a34a;color:#fff}
+.cr.cdn .crn b{color:var(--mu);text-decoration:line-through;text-decoration-thickness:1px}
+.pdn{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.pdn svg{flex:none;color:var(--tx)}
+.pdl{flex:1;min-width:150px;display:grid;gap:6px}
+.pdl div{display:flex;align-items:center;gap:8px;font-size:13.5px}
+.pdl i{width:12px;height:12px;border-radius:4px;flex:none}
+.pdl span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pdl b{font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -4349,6 +4364,55 @@ function pChips(list,k,c){
   var _pb5=pBlocks;pBlocks=function(k,c,items){return _pb5(k,c,items).replace(/<small>Given<\/small>/g,"<small>I gave</small>").replace(/<small>Get back<\/small>/g,"<small>I get back</small>").replace(/<small>Interest<\/small>/g,"<small>Interest</small>")};
   renderMoney();
 })();
+
+/* ---- v70: monthly collection checklist, share chart, copy summary ---- */
+function mKey(){return isoNow().slice(0,7)}
+function homeActive(c){return loans.given.filter(function(x){return gOf("given",x)==="home"&&!x.done&&x.cur===c})}
+function hPeople(c){
+  var m={},o=[];homeActive(c).forEach(function(L){var k=pKey(L.name);if(!m[k]){m[k]={key:k,n:L.name,L:[]};o.push(m[k])}m[k].L.push(L)});
+  o.sort(function(a,b){return a.n.toLowerCase()<b.n.toLowerCase()?-1:1});return o;
+}
+function pCollected(P){return P.L.every(function(L){return(L.pay||[]).some(function(x){return x.m===mKey()})})}
+function colCard(c){
+  var P=hPeople(c);if(!P.length)return"";
+  var tot=0,got=0,nc=0;
+  var rows=P.map(function(x){var amt=x.L.reduce(function(t,L){return t+mInt(L)},0),ok=pCollected(x);tot+=amt;if(ok){got+=amt;nc++}
+    return'<div class="cr'+(ok?" cdn":"")+'"><span class="crn"><b>'+lesc(x.n)+'</b><small>'+money(amt,c)+' interest · '+x.L.length+(x.L.length>1?" loans":" loan")+'</small></span><button type="button" class="crb" data-a="col" data-key="'+x.key+'">'+(ok?"✓ Got it":"Mark got it")+'</button></div>'}).join("");
+  var pc=tot>0?got/tot*100:0,mn=new Date().toLocaleDateString("en-IE",{month:"long",year:"numeric"});
+  return'<div class="mcard"><h2>📅 Interest to collect · '+mn+'</h2><p class="mnote" style="margin:0 0 8px">Tap <b>Mark got it</b> when the person gives you this month\'s interest. The app saves it as a payment.</p>'+
+    '<div class="rd"><span class="w">Collected</span><b class="gg">'+money(got,c)+' <small style="font-weight:700;color:var(--mu)">of '+money(tot,c)+'</small></b></div><div class="prg" style="margin:8px 0 12px"><i style="width:'+pc.toFixed(1)+'%"></i></div>'+rows+'<p class="mnote" style="margin:8px 0 0">'+nc+' of '+P.length+' people done this month.</p></div>';
+}
+function shareCard(c){
+  var P=hPeople(c).map(function(x){return{n:x.n,t:x.L.reduce(function(t,L){return t+(parseFloat(L.p)||0)},0)}}).sort(function(a,b){return b.t-a.t});
+  if(P.length<2)return"";
+  var all=P.reduce(function(t,x){return t+x.t},0),top=P.slice(0,6),rest=all-top.reduce(function(t,x){return t+x.t},0);
+  if(rest>0)top.push({n:"Others ("+(P.length-6)+")",t:rest});
+  var COL=["#2563eb","#16a34a","#f59e0b","#db2777","#7c3aed","#0891b2","#64748b"],R=15.9155,off=0,arcs="";
+  top.forEach(function(x,i){var f=x.t/all*100;arcs+='<circle cx="21" cy="21" r="'+R+'" fill="none" stroke="'+COL[i]+'" stroke-width="6" stroke-dasharray="'+f.toFixed(2)+' '+(100-f).toFixed(2)+'" stroke-dashoffset="'+(25-off).toFixed(2)+'"/>';off+=f});
+  return'<div class="mcard"><h2>🥧 Who has my money</h2><div class="pdn"><svg viewBox="0 0 42 42" width="130" height="130" role="img" aria-label="Share of money by person">'+arcs+'<text x="21" y="20" text-anchor="middle" font-size="4.6" font-weight="800" fill="currentColor">'+P.length+'</text><text x="21" y="26" text-anchor="middle" font-size="3" fill="currentColor" opacity=".7">people</text></svg><div class="pdl">'+
+    top.map(function(x,i){return'<div><i style="background:'+COL[i]+'"></i><span>'+lesc(x.n)+'</span><b>'+(x.t/all*100).toFixed(0)+'%</b></div>'}).join("")+'</div></div></div>';
+}
+function sumText(c){
+  var P=hPeople(c),g=0,t=0,out=["🏠 Home loans · "+new Date().toLocaleDateString("en-IE",{day:"numeric",month:"short",year:"numeric"})];
+  P.forEach(function(x){var p=0,tt=0;x.L.forEach(function(L){p+=parseFloat(L.p)||0;tt+=balOf(L)});g+=p;t+=tt;out.push(x.n+": gave "+money(p,c)+" → balance "+money(tt,c))});
+  out.push("TOTAL gave "+money(g,c)+" → balance "+money(t,c));return out.join("\n");
+}
+(function(){
+  var _hc2=homeCard;homeCard=function(c){
+    var h=_hc2(c);if(!h)return h;
+    return h+colCard(c)+shareCard(c)+'<button class="add ghost" data-a="sumcopy" style="margin:0 0 12px">📋 Copy Home summary</button>';
+  };
+  document.addEventListener("click",function(e){
+    var b=e.target.closest&&e.target.closest("[data-a]");if(!b)return;var a=b.getAttribute("data-a");
+    if(a!=="col"&&a!=="sumcopy")return;e.stopPropagation();var c=mCur();
+    if(a==="sumcopy"){copyTxt(sumText(c));return}
+    var P=hPeople(c).filter(function(x){return x.key===b.getAttribute("data-key")})[0];if(!P)return;
+    if(pCollected(P)){P.L.forEach(function(L){L.pay=(L.pay||[]).filter(function(x){return x.m!==mKey()})})}
+    else P.L.forEach(function(L){var v=mInt(L);if(v>0)(L.pay=L.pay||[]).push({d:isoNow(),a:Math.round(v*100)/100,m:mKey()})});
+    saveLoans();renderMoney();
+  },true);
+  renderMoney();
+})();
 var HASH="ce43ef7ac0487be787746eebe94f8648e87cd92c64b4d2762ed1fbe1b42a6ceb", AUTH="hours_auth_v1";
 function sha(t){
   return crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)).then(function(b){
@@ -4791,7 +4855,7 @@ $("bkpdf").onclick=function(){
 };
 
 /* ---- version label ---- */
-var APPV="v69 · 23 Nov 2026";
+var APPV="v70 · 23 Nov 2026";
 try{$("v-dash").insertAdjacentHTML("beforeend",'<p class="mnote" style="text-align:center;margin:14px 0 4px">Holy Cross app '+APPV+'</p>');
 $("biohint").insertAdjacentHTML("afterend",'<div style="text-align:center;color:var(--mu);font-size:12px;margin-top:10px">'+APPV+'</div>')}catch(e){}
 /* ---- v32: charts for hours and pay ---- */
